@@ -5,14 +5,20 @@ DYNAMIC_LIBS_DIR = ./extlibs/lib
 DYNAMIC_LIBS = -L$(DYNAMIC_LIBS_DIR) -lGL -lGLEW -lglfw
 HEADERS = -I ./extlibs/include/
 
-main: main.o
-	$(CXX) -g build/main.o -o build/main $(DYNAMIC_LIBS) -Wl,-rpath,$(DYNAMIC_LIBS_DIR)
+SRC = src
+BUILD = build
 
-main.o: src/main.cpp
-	$(CXX) -c src/main.cpp $(HEADERS) -o build/main.o -Werror -Wall -std=c++11
+default: $(BUILD)/main
+
+$(BUILD)/main: $(BUILD)/main.o
+	$(CXX) $(BUILD)/main.o -o $(BUILD)/main $(DYNAMIC_LIBS) -Wl,-rpath,$(DYNAMIC_LIBS_DIR)
+
+$(BUILD)/main.o: $(SRC)/main.cpp
+	mkdir -p $(BUILD)
+	$(CXX) -c $(SRC)/main.cpp $(HEADERS) -o $(BUILD)/main.o -Werror -Wall -std=c++11
 
 clean:
-	rm build/*
+	rm $(BUILD)/*
 
 run:
-	./build/main
+	$(BUILD)/main
