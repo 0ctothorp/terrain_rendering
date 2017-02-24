@@ -1,2 +1,2 @@
-./build/*
-./extlibs/src
+build/*
+extlibs/src/
