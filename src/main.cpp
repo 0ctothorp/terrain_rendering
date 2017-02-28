@@ -1,9 +1,11 @@
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 void GetFirstNMessages(GLuint numMsgs) {
     GLint maxMsgLen = 0;
@@ -109,24 +111,52 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
     return window;
 }
 
+class Plane {
+private:
+    int width;
+    int height;
+    std::vector<glm::vec3> vertices;
+
+    void calc_vertices_positions() {
+        int pos = 0;
+        for(int i = 0; i <= width; i++) {
+            for(int j = 0; j <= height; j++) {
+                vertices[pos].x = i;
+                vertices[pos].y = j;
+                vertices[pos].z = 0;
+                pos++;
+            }
+        }
+
+        for(uint i = 0; i < vertices.size(); i++)
+            std::cout << i << ": " << vertices[i].x << ", " << vertices[i].y << ", " 
+                      << vertices[i].z << "\n";
+    }
+public:
+    Plane(int _width = 5, int _height = 5) : width(_width), height(_height) {
+        vertices.resize((width + 1) * (height + 1));
+        calc_vertices_positions();
+    }
+};
+
 int main() {
     int w = 640, h = 480;
     auto window = GetGLFWwindow(w, h, "OpenGL terrain rendering");
 
     glEnable(GL_DEBUG_OUTPUT);
-    GetFirstNMessages(100);
+    GetFirstNMessages(10);
+
+    Plane plane;
 
     while(glfwWindowShouldClose(window) == 0) {     
 
         glfwPollEvents();
 
-        glClearColor(0, 0, 0, 0);    // Background
+        glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glfwSwapBuffers(window);   
     }
 
     glfwTerminate();
-
-    return EXIT_SUCCESS;
 }

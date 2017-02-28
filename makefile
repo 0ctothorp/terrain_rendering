@@ -15,7 +15,7 @@ $(BUILD)/main: $(BUILD)/main.o
 
 $(BUILD)/main.o: $(SRC)/main.cpp
 	mkdir -p $(BUILD)
-	$(CXX) -c $(SRC)/main.cpp $(HEADERS) -o $(BUILD)/main.o -Werror -Wall -std=c++11
+	$(CXX) -c $(SRC)/main.cpp $(HEADERS) -o $(BUILD)/main.o -Werror -Wall -std=c++14
 
 clean:
 	rm $(BUILD)/*
