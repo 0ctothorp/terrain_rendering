@@ -116,13 +116,14 @@ private:
     int width;
     int height;
     std::vector<glm::vec3> vertices;
+    std::vector<int> indices;
 
     void calc_vertices_positions() {
         int pos = 0;
         for(int i = 0; i <= width; i++) {
             for(int j = 0; j <= height; j++) {
-                vertices[pos].x = i;
-                vertices[pos].y = j;
+                vertices[pos].x = j;
+                vertices[pos].y = i;
                 vertices[pos].z = 0;
                 pos++;
             }
@@ -131,11 +132,37 @@ private:
         for(uint i = 0; i < vertices.size(); i++)
             std::cout << i << ": " << vertices[i].x << ", " << vertices[i].y << ", " 
                       << vertices[i].z << "\n";
+
+        std::cout << std::endl;
     }
+
+    void calc_indices() {
+        indices.push_back(0);
+        for(uint i = 0; i < vertices.size() - width - 1; i++) {
+            if(i % (width + 1) == (uint)width) {
+                indices.push_back(i + width + 1);
+                indices.push_back(i + width + 1);
+                if(i < vertices.size() - width - 2) {
+                    indices.push_back(i + 1);
+                    indices.push_back(i + 1);
+                }
+            } else {
+                indices.push_back(i + width + 1);
+                indices.push_back(i + 1);
+            }
+        }
+
+        for(int i: indices) {
+            std::cout << i << ", ";
+        }
+        std::cout << std::endl;
+    }
+
 public:
     Plane(int _width = 5, int _height = 5) : width(_width), height(_height) {
         vertices.resize((width + 1) * (height + 1));
         calc_vertices_positions();
+        calc_indices();
     }
 };
 
@@ -146,7 +173,7 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT);
     GetFirstNMessages(10);
 
-    Plane plane;
+    Plane plane(3, 3);
 
     while(glfwWindowShouldClose(window) == 0) {     
 
