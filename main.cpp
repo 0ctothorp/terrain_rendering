@@ -20,18 +20,29 @@ int WINDOW_HEIGHT = 480;
 Camera camera(glm::vec3(0, 1, 0));
 Mouse mouse(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, &camera);
 
+constexpr int MAX_KEY_CODE = 348;
+bool keys[MAX_KEY_CODE]{false};
+
 void KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/) {
     if(key == -1) {
         cerr << "Pressed unknown key\n";
         return;
     }
 
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+        return;
+    }
+
+    if(action == GLFW_PRESS) {
+        keys[key] = true;
+    } else if(action == GLFW_RELEASE) {
+        keys[key] = false;
+    }
 }
 
 void GlfwErrorCallback(int /*error*/, const char* description) {
-    cerr << "GLFW ERROR: " << description << '\n';
+    cerr << "[GLFW ERROR] " << description << '\n';
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
@@ -91,6 +102,17 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
     return window;
 }
 
+void countFrames(int &frames, double currentFrame, double lastFrame) {
+    static double timePassed = 0;
+    timePassed += currentFrame - lastFrame;
+    if(timePassed >= 1) {
+        cout << frames << " fps\n";
+        frames = 0;
+        timePassed = 0;
+    }
+    frames++;
+}
+
 int main() {
     auto window = GetGLFWwindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL terrain rendering");
 
@@ -100,17 +122,25 @@ int main() {
     Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, 30, 30, &camera);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    double deltaTime = 0;
+    double prevFrameTime = glfwGetTime();
+    int frames = 0;
+
     while(glfwWindowShouldClose(window) == 0) {     
+        double time = glfwGetTime();
+        deltaTime = time - prevFrameTime;
+        countFrames(frames, time, prevFrameTime);
+        prevFrameTime = time;
 
         glfwPollEvents();
-
+        camera.Move(keys, deltaTime);
         glClearColor(0.2, 0.2, 0, 2);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         plane.Draw();
         GetFirstNMessages(10);
 
-        glfwSwapBuffers(window);   
+        glfwSwapBuffers(window);
     }
 
     glfwTerminate();

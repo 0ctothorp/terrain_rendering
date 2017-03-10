@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 using namespace std;
 
@@ -54,19 +55,19 @@ public:
     }
 
     int i = 0;
-    void ProcessKeyboard(Camera_movement direction, GLfloat deltaTime) {
+    void Move(bool *keys, GLfloat deltaTime) {
         GLfloat velocity = MovementSpeed * deltaTime;
 
-        if (direction == FORWARD)
+        if(keys[GLFW_KEY_W])
             Position += glm::normalize(glm::vec3(Front.x, Front.y, Front.z)) * 
                         velocity;
-        else if (direction == BACKWARD)
+        else if(keys[GLFW_KEY_S])
             Position -= glm::normalize(glm::vec3(Front.x, Front.y, Front.z)) * 
                         velocity;
 
-        if (direction == LEFT)
+        if(keys[GLFW_KEY_A])
             Position -= Right * velocity;
-        else if (direction == RIGHT)
+        else if(keys[GLFW_KEY_D])
             Position += Right * velocity;
     }
 
