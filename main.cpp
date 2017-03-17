@@ -10,17 +10,18 @@
 #include "plane.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
+#include "HMParser.hpp"
 
 using namespace std;
 
-int WINDOW_WIDTH = 640;
-int WINDOW_HEIGHT = 480;
+int WINDOW_WIDTH = 800;
+int WINDOW_HEIGHT = 600;
 
 // @Refactor: move this 2 declarations from global to local scope.
-Camera camera(glm::vec3(0, 1, 0));
+Camera camera(glm::vec3(0, 20, 0));
 Mouse mouse(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, &camera);
 
-constexpr int MAX_KEY_CODE = 348;
+const int MAX_KEY_CODE = 348;
 bool keys[MAX_KEY_CODE]{false};
 
 void KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/) {
@@ -59,9 +60,10 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
     glfwSetErrorCallback(GlfwErrorCallback);
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
     if (w == 0 || h == 0) {
         // if 0 then WINDOWLESS FULL SCREEN :
@@ -83,13 +85,16 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
         glfwTerminate();
         exit(-1);
     }
-    glfwMakeContextCurrent(window);    
+    glfwMakeContextCurrent(window);        
 
-    glewExperimental = true; // Needed for core profile
-    if (glewInit() != GLEW_OK) {        
-        cerr << "Failed to initialize GLEW\n";
+    glewExperimental = GL_TRUE; // Needed for core profile
+    GLenum err;
+    if ((err = glewInit()) != GLEW_OK) {        
+        cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << "\n";
         exit(-1);
     }    
+
+    GetFirstNMessages(10);
 
     glViewport(0, 0, w, h);
     glEnable(GL_DEPTH_TEST);
@@ -114,12 +119,15 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
 }
 
 int main() {
+    HMParser hmParser("N50E016.hgt");
+
     auto window = GetGLFWwindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL terrain rendering");
 
-    glEnable(GL_DEBUG_OUTPUT);
-    GetFirstNMessages(10);
+    // glEnable(GL_DEBUG_OUTPUT);
+    // GetFirstNMessages(10);
 
-    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, 30, 30, &camera);
+    // @Bug: Źle działa dla nierównych szerokości i wysokości.
+    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, 1200, 1200, &camera, hmParser.GetDataPtr());
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     double deltaTime = 0;
@@ -138,7 +146,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         plane.Draw();
-        GetFirstNMessages(10);
+        // GetFirstNMessages(10);
 
         glfwSwapBuffers(window);
     }
