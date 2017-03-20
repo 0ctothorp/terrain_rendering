@@ -20,5 +20,6 @@ private:
     Camera *camera;
 public:
     Mouse(double _x, double _y, Camera* camera);
-    void MoveCallback(GLFWwindow*, double xpos, double ypos);
+    void MoveCallback(double xpos, double ypos);
+    void ScrollCallback(double yoffset);
 };

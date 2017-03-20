@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <cstdlib>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -18,7 +19,7 @@ int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
 
 // @Refactor: move this 2 declarations from global to local scope.
-Camera camera(glm::vec3(0, 20, 0));
+Camera camera(glm::vec3(0, 5, 0));
 Mouse mouse(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, &camera);
 
 const int MAX_KEY_CODE = 348;
@@ -47,7 +48,11 @@ void GlfwErrorCallback(int /*error*/, const char* description) {
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    mouse.MoveCallback(window, xpos, ypos);
+    mouse.MoveCallback(xpos, ypos);
+}
+
+void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
+    mouse.ScrollCallback(yoffset);
 }
 
 GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
@@ -103,6 +108,7 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
 
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
+    glfwSetScrollCallback(window, MouseScrollCallback);
 
     return window;
 }
@@ -118,17 +124,22 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
     frames++;
 }
 
-int main() {
+int main(int argc, char **argv) {
     HMParser hmParser("N50E016.hgt");
 
-    auto window = GetGLFWwindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL terrain rendering");
+    int planeW = 0, planeH = 0;
+    if(argc > 1) {
+        planeW = atoi(argv[1]);
+        planeH = atoi(argv[2]);
+    }
 
+    auto window = GetGLFWwindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL terrain rendering");
     // glEnable(GL_DEBUG_OUTPUT);
     // GetFirstNMessages(10);
 
-    // @Bug: Źle działa dla nierównych szerokości i wysokości.
-    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, 1200, 1200, &camera, hmParser.GetDataPtr());
+    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, planeW, planeH, &camera, hmParser.GetDataPtr());
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glEnable(GL_CULL_FACE);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -142,7 +153,7 @@ int main() {
 
         glfwPollEvents();
         camera.Move(keys, deltaTime);
-        glClearColor(0.2, 0.2, 0, 2);
+        glClearColor(0.0, 0.0, 0.0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         plane.Draw();

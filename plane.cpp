@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cassert>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -8,23 +7,33 @@
 
 void Plane::CalcVerticesPositions(vector< vector<short> > *hmData) {
     int pos = 0;
-    for(float i = 0.0f; i <= width; i++) {
-        for(float j = 0.0f; j <= height; j++) {
+    for(int i = 0; i <= width; i++) {
+        for(int j = 0; j <= height; j++) {
             vertices[pos] = j;
-            vertices[++pos] = (float)(*hmData)[i][j] / 200.0f;
+            vertices[++pos] = (float)(*hmData)[i][j] / 400.0f;
             vertices[++pos] = i;
             pos++;
         }
     }
+
+    // int j = 0;
+    // cout << "vertices:\n";
+    // for(int i = 0; i < vertices.size(); i += 3) {
+    //     cout << vertices[i] << " ";
+    //     cout << vertices[i + 1] << " ";
+    //     cout << vertices[i + 2] << "\n";
+    //     j++;
+    //     if(j == width) j = 0;
+    // }
 }
 
 void Plane::CalcIndices() {
     int j = 0;
     indices[j] = 0;
     int i;
-    for(i = 0; i < vertices.size() / 3 - (width + 1); i++) {
+    for(i = 0; i < vertices.size() / 3 - (width + 1) - 1; i++) {
         if(i % (width + 1) == (uint)width) {
-            indices[++j] = i + width + 1; 
+            indices[++j] = i + width + 1;
             indices[++j] = i + width + 1; 
             indices[++j] = i + 1; 
             indices[++j] = i + 1;
@@ -34,6 +43,11 @@ void Plane::CalcIndices() {
         }
     }
     indices[++j] = i + width + 1;
+
+    // cout << "indices:\n";
+    // for(int i = 0; i < indices.size(); i++) {
+    //     cout << indices[i] << "\n";
+    // }
 }
 
 void Plane::SetBuffers() {
@@ -57,7 +71,7 @@ void Plane::SetBuffers() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        indices.size() * sizeof(GLushort),
+        indices.size() * sizeof(GLuint),
         &indices[0],
         GL_STATIC_DRAW
     );
@@ -67,13 +81,18 @@ void Plane::SetBuffers() {
 }
 
 Plane::Plane(int windowW, int windowH, int _width, int _height, Camera *_camera, 
-             vector< vector<short> > *hmData) : 
-width(_width), 
-height(_height), 
+             vector< vector<short> > *hmData) :  
 shader(vertexShaderPath, fragmentShaderPath),
-camera(_camera),
-indices(4 * height + (2 * width * height + 2)),
-vertices((width + 1) * (height + 1) * 3) {
+camera(_camera) {
+    if(_width == 0 && _height == 0) {
+        width = hmData->size() - 1;
+        height = (*hmData)[0].size() - 1;
+    } else {
+        width = _width;
+        height = _height;
+    }
+    indices.resize(4 * (height - 1) + (2 * width * height + 2));
+    vertices.resize((width + 1) * (height + 1) * 3);
     CalcVerticesPositions(hmData);
     CalcIndices();
     SetBuffers();
@@ -84,7 +103,7 @@ vertices((width + 1) * (height + 1) * 3) {
         glm::radians(60.0f),
         (GLfloat)windowW / (GLfloat)windowH,
         0.01f,
-        100.0f
+        1000.0f
     );
     glUniformMatrix4fv(unifProjMat, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 

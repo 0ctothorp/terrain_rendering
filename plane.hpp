@@ -13,6 +13,7 @@ using namespace std;
 
 class Plane {
 private:
+    // width i height rozumiane jako ilość "kafelków" na boku, a nie wierzchołków (do zmiany?)
     int width;
     int height;
     vector<GLfloat> vertices;
