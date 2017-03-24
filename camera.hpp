@@ -18,11 +18,12 @@ enum Camera_movement {
     RIGHT
 };
 
-const GLfloat YAW        =  45.0f;
-const GLfloat PITCH      =  -25.0f;
-const GLfloat SPEED      =  3.0f;
-const GLfloat SENSITIVTY =  0.15f;
-const GLfloat COL_OFFSET =  0.15f;
+const GLfloat YAW            =  0.0f;
+const GLfloat PITCH          = -25.0f;
+const GLfloat SPEED          =  1.0f;
+const GLfloat VERTICAL_SPEED =  5.0f;
+const GLfloat SENSITIVTY     =  0.15f;
+const GLfloat COL_OFFSET     =  0.15f;
 
 class Camera {
 public:
@@ -35,13 +36,15 @@ public:
     GLfloat Yaw;
     GLfloat Pitch;
 
-    GLfloat MovementSpeed;
+    GLfloat movementSpeed;
+    GLfloat verticalMovementSpeed;
     GLfloat MouseSensitivity;
 
     // @TODO: Make constructor that takes lookAt vector.
     Camera(glm::vec3 position = glm::vec3(0.0f, 1.0f, 0.0f))
     : Front(glm::vec3(0.0f, 0.0f, 1.0f))
-    , MovementSpeed(SPEED)
+    , movementSpeed(SPEED)
+    , verticalMovementSpeed(VERTICAL_SPEED)
     , MouseSensitivity(SENSITIVTY) {
         Position = position;
         WorldUp = glm::vec3(0, 1, 0);
@@ -56,7 +59,7 @@ public:
 
     int i = 0;
     void Move(bool *keys, GLfloat deltaTime) {
-        GLfloat velocity = MovementSpeed * deltaTime;
+        GLfloat velocity = movementSpeed * deltaTime;
 
         if(keys[GLFW_KEY_W])
             Position += glm::normalize(glm::vec3(Front.x, Front.y, Front.z)) * 
@@ -69,6 +72,12 @@ public:
             Position -= Right * velocity;
         else if(keys[GLFW_KEY_D])
             Position += Right * velocity;
+
+        GLfloat verticalVelocity = verticalMovementSpeed * deltaTime;
+        if(keys[GLFW_KEY_SPACE])
+            Position += WorldUp * verticalVelocity;
+        if(keys[GLFW_KEY_LEFT_CONTROL])
+            Position -= WorldUp * verticalVelocity;
     }
 
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset,
@@ -92,6 +101,11 @@ public:
 
     void setPosition(glm::vec3 pos) {
         Position = pos;
+    }
+
+    void ChangeMovementSpeed(int change) {
+        if((change < 0 && movementSpeed > 1) || change > 0)
+            movementSpeed += change;
     }
 
 private:

@@ -12,7 +12,7 @@ main: $(OBJECTS)
 	$(CXX) $^ -o main $(DYNAMIC_LIBS)
 
 $(BUILD)/%.o: %.cpp
-	$(CXX) -c $^ -o $@ $(FLAGS)
+	$(CXX) -c $^ -o $@ $(FLAGS) -g
 
 clean:
 	rm $(BUILD)/*

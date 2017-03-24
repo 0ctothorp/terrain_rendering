@@ -13,10 +13,11 @@ using namespace std;
 
 class Plane {
 private:
+    // width i height rozumiane jako ilość "kafelków" na boku, a nie wierzchołków (do zmiany?)
     int width;
     int height;
     vector<GLfloat> vertices;
-    vector<GLushort> indices;
+    vector<GLuint> indices;
     GLuint vao_id;
     GLuint vbo_id;
     GLuint ibo_id;
@@ -29,13 +30,17 @@ private:
     GLuint unifViewMat;
     GLuint unifProjMat;
 
-    void CalcVerticesPositions();
+    // debug
+    uint _indices = 0;
+
+    void CalcVerticesPositions(vector< vector<short> > *);
     void CalcIndices();
     void SetBuffers();
 
 public:
     // @Refactor: Loose coupling with camera instead tight.
-    Plane(int windowW, int windowH, int _width = 5, int _height = 5, Camera *camera = nullptr);
+    Plane(int windowW, int windowH, int _width = 5, int _height = 5, Camera *camera = nullptr,
+          vector< vector<short> > *hmData = nullptr);
     ~Plane();
     void Draw();
 };

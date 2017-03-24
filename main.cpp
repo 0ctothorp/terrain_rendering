@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <cstdlib>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -10,17 +11,18 @@
 #include "plane.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
+#include "HMParser.hpp"
 
 using namespace std;
 
-int WINDOW_WIDTH = 640;
-int WINDOW_HEIGHT = 480;
+int WINDOW_WIDTH = 800;
+int WINDOW_HEIGHT = 600;
 
 // @Refactor: move this 2 declarations from global to local scope.
-Camera camera(glm::vec3(0, 1, 0));
+Camera camera(glm::vec3(0, 5, 0));
 Mouse mouse(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, &camera);
 
-constexpr int MAX_KEY_CODE = 348;
+const int MAX_KEY_CODE = 348;
 bool keys[MAX_KEY_CODE]{false};
 
 void KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/) {
@@ -46,7 +48,11 @@ void GlfwErrorCallback(int /*error*/, const char* description) {
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    mouse.MoveCallback(window, xpos, ypos);
+    mouse.MoveCallback(xpos, ypos);
+}
+
+void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
+    mouse.ScrollCallback(yoffset);
 }
 
 GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
@@ -59,9 +65,10 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
     glfwSetErrorCallback(GlfwErrorCallback);
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
     if (w == 0 || h == 0) {
         // if 0 then WINDOWLESS FULL SCREEN :
@@ -83,13 +90,16 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
         glfwTerminate();
         exit(-1);
     }
-    glfwMakeContextCurrent(window);    
+    glfwMakeContextCurrent(window);        
 
-    glewExperimental = true; // Needed for core profile
-    if (glewInit() != GLEW_OK) {        
-        cerr << "Failed to initialize GLEW\n";
+    glewExperimental = GL_TRUE; // Needed for core profile
+    GLenum err;
+    if ((err = glewInit()) != GLEW_OK) {        
+        cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << "\n";
         exit(-1);
     }    
+
+    GetFirstNMessages(10);
 
     glViewport(0, 0, w, h);
     glEnable(GL_DEPTH_TEST);
@@ -98,6 +108,7 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
 
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
+    glfwSetScrollCallback(window, MouseScrollCallback);
 
     return window;
 }
@@ -113,14 +124,22 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
     frames++;
 }
 
-int main() {
+int main(int argc, char **argv) {
+    HMParser hmParser("N50E016.hgt");
+
+    int planeW = 0, planeH = 0;
+    if(argc > 1) {
+        planeW = atoi(argv[1]);
+        planeH = atoi(argv[2]);
+    }
+
     auto window = GetGLFWwindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL terrain rendering");
+    // glEnable(GL_DEBUG_OUTPUT);
+    // GetFirstNMessages(10);
 
-    glEnable(GL_DEBUG_OUTPUT);
-    GetFirstNMessages(10);
-
-    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, 30, 30, &camera);
+    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, planeW, planeH, &camera, hmParser.GetDataPtr());
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glEnable(GL_CULL_FACE);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -134,11 +153,11 @@ int main() {
 
         glfwPollEvents();
         camera.Move(keys, deltaTime);
-        glClearColor(0.2, 0.2, 0, 2);
+        glClearColor(0.0, 0.0, 0.0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         plane.Draw();
-        GetFirstNMessages(10);
+        // GetFirstNMessages(10);
 
         glfwSwapBuffers(window);
     }

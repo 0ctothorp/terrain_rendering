@@ -9,7 +9,7 @@ lastX(_x),
 lastY(_y), 
 camera(_camera) {}
 
-void Mouse::MoveCallback(GLFWwindow*, double xpos, double ypos) {
+void Mouse::MoveCallback(double xpos, double ypos) {
     if(firstTime) {
         lastX = xpos;
         lastY = ypos;    
@@ -18,4 +18,8 @@ void Mouse::MoveCallback(GLFWwindow*, double xpos, double ypos) {
     camera->ProcessMouseMovement(xpos - lastX, ypos - lastY);
     lastX = xpos;
     lastY = ypos;
+}
+
+void Mouse::ScrollCallback(double yoffset) {
+    camera->ChangeMovementSpeed(yoffset);
 }

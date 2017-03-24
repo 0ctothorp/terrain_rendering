@@ -5,45 +5,49 @@
 #include "plane.hpp"
 #include "glDebug.hpp"
 
-void Plane::CalcVerticesPositions() {
+void Plane::CalcVerticesPositions(vector< vector<short> > *hmData) {
     int pos = 0;
-    for(float i = 0.0f; i <= width; i++) {
-        for(float j = 0.0f; j <= height; j++) {
+    for(int i = 0; i <= width; i++) {
+        for(int j = 0; j <= height; j++) {
             vertices[pos] = j;
-            vertices[++pos] = 0;
+            vertices[++pos] = (float)(*hmData)[i][j] / 400.0f;
             vertices[++pos] = i;
             pos++;
         }
     }
 
-    // for(uint i = 0; i < vertices.size(); i += 3)
-    //     std::cerr << i << ": " << vertices[i] << ", " << vertices[i + 1] << ", " 
-    //               << vertices[i + 2] << "\n";
-    // std::cerr << std::endl;
+    // int j = 0;
+    // cout << "vertices:\n";
+    // for(int i = 0; i < vertices.size(); i += 3) {
+    //     cout << vertices[i] << " ";
+    //     cout << vertices[i + 1] << " ";
+    //     cout << vertices[i + 2] << "\n";
+    //     j++;
+    //     if(j == width) j = 0;
+    // }
 }
 
 void Plane::CalcIndices() {
-    indices.push_back(0);
-    GLushort i = 0;
-    for(; i < vertices.size() / 3 - width - 2; i++) {
+    int j = 0;
+    indices[j] = 0;
+    int i;
+    for(i = 0; i < vertices.size() / 3 - (width + 1) - 1; i++) {
         if(i % (width + 1) == (uint)width) {
-            indices.push_back(i + width + 1);
-            indices.push_back(i + width + 1);
-            if(i < vertices.size() / 3 - width - 2) {
-                indices.push_back(i + 1);
-                indices.push_back(i + 1);
-            }
+            indices[++j] = i + width + 1;
+            indices[++j] = i + width + 1; 
+            indices[++j] = i + 1; 
+            indices[++j] = i + 1;
         } else {
-            indices.push_back(i + width + 1);
-            indices.push_back(i + 1);
+            indices[++j] = i + width + 1; 
+            indices[++j] = i + 1;
         }
     }
-    indices.push_back(i + width + 1);
+    indices[++j] = i + width + 1;
 
-    // for(int i: indices) {
-    //     std::cerr << i << ", ";
+    // cout << "indices:\n";
+    // for(int i = 0; i < indices.size(); i++) {
+    //     cout << indices[i] << "\n";
     // }
-    // std::cerr << std::endl;
 }
 
 void Plane::SetBuffers() {
@@ -67,22 +71,29 @@ void Plane::SetBuffers() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        indices.size() * sizeof(GLushort),
+        indices.size() * sizeof(GLuint),
         &indices[0],
         GL_STATIC_DRAW
     );
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    GetFirstNMessages(10);
+    // GetFirstNMessages(10);
 }
 
-Plane::Plane(int windowW, int windowH, int _width, int _height, Camera *_camera) : 
-width(_width), 
-height(_height), 
+Plane::Plane(int windowW, int windowH, int _width, int _height, Camera *_camera, 
+             vector< vector<short> > *hmData) :  
 shader(vertexShaderPath, fragmentShaderPath),
 camera(_camera) {
+    if(_width == 0 && _height == 0) {
+        width = hmData->size() - 1;
+        height = (*hmData)[0].size() - 1;
+    } else {
+        width = _width;
+        height = _height;
+    }
+    indices.resize(4 * (height - 1) + (2 * width * height + 2));
     vertices.resize((width + 1) * (height + 1) * 3);
-    CalcVerticesPositions();
+    CalcVerticesPositions(hmData);
     CalcIndices();
     SetBuffers();
     glUseProgram(shader.GetProgramId());
@@ -92,11 +103,11 @@ camera(_camera) {
         glm::radians(60.0f),
         (GLfloat)windowW / (GLfloat)windowH,
         0.01f,
-        100.0f
+        1000.0f
     );
     glUniformMatrix4fv(unifProjMat, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
-    GetFirstNMessages(10);
+    // GetFirstNMessages(10);
 }
 
 Plane::~Plane() {
@@ -111,7 +122,7 @@ void Plane::Draw() {
     glBindVertexArray(vao_id);
     glm::mat4 viewMat = camera->GetViewMatrix();
     glUniformMatrix4fv(unifViewMat, 1, GL_FALSE, glm::value_ptr(viewMat));
-    glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_SHORT, &indices[0]);
+    glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_INT, &indices[0]);
     glBindVertexArray(0);
-    GetFirstNMessages(10);
+    // GetFirstNMessages(10);
 }
