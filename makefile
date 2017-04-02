@@ -11,8 +11,11 @@ SHADERS = shaders
 main: $(OBJECTS)
 	$(CXX) $^ -o main $(DYNAMIC_LIBS)
 
-$(BUILD)/%.o: %.cpp
-	$(CXX) -c $^ -o $@ $(FLAGS) -g
+$(BUILD)/%.o: %.cpp %.hpp
+	$(CXX) -c $< -o $@ $(FLAGS) -g
+
+$(BUILD)/main.o: main.cpp
+	$(CXX) -c $< -o $@ $(FLAGS) -g	
 
 clean:
 	rm $(BUILD)/*

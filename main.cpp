@@ -12,6 +12,7 @@
 #include "glDebug.hpp"
 #include "mouse.hpp"
 #include "HMParser.hpp"
+#include "lodPlane.hpp"
 
 using namespace std;
 
@@ -125,7 +126,7 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
 }
 
 int main(int argc, char **argv) {
-    HMParser hmParser("N50E016.hgt");
+    // HMParser hmParser("N50E016.hgt");
 
     int planeW = 0, planeH = 0;
     if(argc > 1) {
@@ -137,7 +138,8 @@ int main(int argc, char **argv) {
     // glEnable(GL_DEBUG_OUTPUT);
     // GetFirstNMessages(10);
 
-    Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, planeW, planeH, &camera, hmParser.GetDataPtr());
+    // Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, planeW, planeH, &camera, hmParser.GetDataPtr());
+    LODPlane lodPlane(WINDOW_WIDTH, WINDOW_HEIGHT, &camera);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // glEnable(GL_CULL_FACE);
 
@@ -156,8 +158,9 @@ int main(int argc, char **argv) {
         glClearColor(0.0, 0.0, 0.0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        plane.Draw();
+        //plane.Draw();
         // GetFirstNMessages(10);
+        lodPlane.Draw();
 
         glfwSwapBuffers(window);
     }
