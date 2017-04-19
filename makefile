@@ -1,7 +1,7 @@
 CXX = g++
 
 DYNAMIC_LIBS = -lGL -lGLEW -lglfw
-FLAGS = -std=c++11 -Wextra -Wall
+FLAGS = -std=c++14 -Wextra -Wall
 
 BUILD = build
 SOURCES = $(wildcard *.cpp)
@@ -14,7 +14,7 @@ main: $(OBJECTS)
 $(BUILD)/%.o: %.cpp %.hpp
 	$(CXX) -c $< -o $@ $(FLAGS) -g
 
-$(BUILD)/main.o: main.cpp
+$(BUILD)/main.o: main.cpp camera.hpp
 	$(CXX) -c $< -o $@ $(FLAGS) -g	
 
 clean:

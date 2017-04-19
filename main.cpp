@@ -8,7 +8,6 @@
 #include <glm/glm.hpp>
 
 #include "camera.hpp"
-#include "plane.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
 #include "HMParser.hpp"
@@ -19,7 +18,6 @@ using namespace std;
 int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
 
-// @Refactor: move this 2 declarations from global to local scope.
 Camera camera(glm::vec3(0, 5, 0));
 Mouse mouse(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, &camera);
 
@@ -100,7 +98,7 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
         exit(-1);
     }    
 
-    GetFirstNMessages(10);
+    // GetFirstNMessages(10);
 
     glViewport(0, 0, w, h);
     glEnable(GL_DEPTH_TEST);
@@ -110,6 +108,8 @@ GLFWwindow* GetGLFWwindow(int &w, int &h, const char *name){
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetScrollCallback(window, MouseScrollCallback);
+
+    GetErrors();
 
     return window;
 }
@@ -126,7 +126,7 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
 }
 
 int main(int argc, char **argv) {
-    // HMParser hmParser("N50E016.hgt");
+    HMParser hmParser("N50E016.hgt");
 
     int planeW = 0, planeH = 0;
     if(argc > 1) {
@@ -135,10 +135,12 @@ int main(int argc, char **argv) {
     }
 
     auto window = GetGLFWwindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL terrain rendering");
-    // glEnable(GL_DEBUG_OUTPUT);
-    // GetFirstNMessages(10);
 
-    // Plane plane(WINDOW_WIDTH, WINDOW_HEIGHT, planeW, planeH, &camera, hmParser.GetDataPtr());
+    // Musi być zainicjalizowane tutaj, bo w global scope nie ma zainicjalizowanego GLEW'a.
+    TileMaterial::shader = new Shader{TileMaterial::vertexShaderPath, 
+                                      TileMaterial::fragmentShaderPath};
+    TileMesh::SetTileGeom();
+
     LODPlane lodPlane(WINDOW_WIDTH, WINDOW_HEIGHT, &camera);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // glEnable(GL_CULL_FACE);
@@ -146,6 +148,8 @@ int main(int argc, char **argv) {
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
+
+    GetErrors();
 
     while(glfwWindowShouldClose(window) == 0) {     
         double time = glfwGetTime();
@@ -158,8 +162,6 @@ int main(int argc, char **argv) {
         glClearColor(0.0, 0.0, 0.0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //plane.Draw();
-        // GetFirstNMessages(10);
         lodPlane.Draw();
 
         glfwSwapBuffers(window);

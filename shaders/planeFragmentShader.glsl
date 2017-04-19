@@ -1,5 +1,7 @@
 #version 330 core
 
+in float morphFactor;
+
 out vec4 color;
 
 uniform int level;
@@ -14,4 +16,6 @@ void main() {
     else if(level % 4 == 1) color = green;
     else if(level % 4 == 2) color = blue;
     else color = yellow;
+    if(morphFactor > 0)
+        color = mix(color, vec4(1, 1, 1, 1), morphFactor);
 }
