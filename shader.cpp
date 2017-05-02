@@ -85,6 +85,6 @@ void Shader::CompileShader(GLuint vertexShader, GLuint fragmentShader) {
     }
 }
 
-GLuint Shader::GetProgramId() {
+GLuint Shader::GetProgramId() const {
     return programId;
 }

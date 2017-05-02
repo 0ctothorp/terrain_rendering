@@ -1,7 +1,7 @@
 CXX = g++
 
 DYNAMIC_LIBS = -lGL -lGLEW -lglfw
-FLAGS = -std=c++11 -Wextra -Wall
+FLAGS = -std=c++14 -Wextra -Wall
 
 BUILD = build
 SOURCES = $(wildcard *.cpp)
@@ -11,8 +11,11 @@ SHADERS = shaders
 main: $(OBJECTS)
 	$(CXX) $^ -o main $(DYNAMIC_LIBS)
 
-$(BUILD)/%.o: %.cpp
-	$(CXX) -c $^ -o $@ $(FLAGS) -g
+$(BUILD)/%.o: %.cpp %.hpp
+	$(CXX) -c $< -o $@ $(FLAGS) -g
+
+$(BUILD)/main.o: main.cpp camera.hpp
+	$(CXX) -c $< -o $@ $(FLAGS) -g	
 
 clean:
 	rm $(BUILD)/*
