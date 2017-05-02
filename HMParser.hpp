@@ -7,9 +7,10 @@ using namespace std;
 
 class HMParser {
 private:
-    vector< vector<short> > data;
+    vector<short> data;
+    const int width = 1201;
 public:
     HMParser(const string &hmPath);
     void ParseHM(const string &hmPath);
-    vector< vector<short> >* GetDataPtr();
+    vector<short>* GetDataPtr();
 };

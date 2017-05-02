@@ -21,7 +21,6 @@ enum Camera_movement {
 const GLfloat YAW            =  0.0f;
 const GLfloat PITCH          = -25.0f;
 const GLfloat SPEED          =  1.0f;
-const GLfloat VERTICAL_SPEED =  5.0f;
 const GLfloat SENSITIVTY     =  0.15f;
 const GLfloat COL_OFFSET     =  0.15f;
 
@@ -37,47 +36,36 @@ public:
     GLfloat Pitch;
 
     GLfloat movementSpeed;
-    GLfloat verticalMovementSpeed;
     GLfloat MouseSensitivity;
 
-    // @TODO: Make constructor that takes lookAt vector.
-    Camera(glm::vec3 position = glm::vec3(0.0f, 1.0f, 0.0f))
+    Camera(glm::vec3 position)
     : Front(glm::vec3(0.0f, 0.0f, -1.0f))
     , movementSpeed(SPEED)
-    , verticalMovementSpeed(VERTICAL_SPEED)
-    , MouseSensitivity(SENSITIVTY) {
-        Position = position;
-        WorldUp = glm::vec3(0, 1, 0);
-        Yaw = YAW;
-        Pitch = PITCH;
-        updateCameraVectors();
+    , MouseSensitivity(SENSITIVTY)
+    , Position(position) {
+        WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        // Yaw = YAW;
+        // Pitch = PITCH;
+        // updateCameraVectors();
+        Right = glm::normalize(glm::cross(Front, WorldUp));
+        Up    = glm::normalize(glm::cross(Right, Front));
     }
 
     glm::mat4 GetViewMatrix() {
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    int i = 0;
     void Move(bool *keys, GLfloat deltaTime) {
         GLfloat velocity = movementSpeed * deltaTime;
 
-        if(keys[GLFW_KEY_W])
-            Position += glm::normalize(glm::vec3(Front.x, Front.y, Front.z)) * 
-                        velocity;
-        else if(keys[GLFW_KEY_S])
-            Position -= glm::normalize(glm::vec3(Front.x, Front.y, Front.z)) * 
-                        velocity;
+        if(keys[GLFW_KEY_W]) Position += Front * velocity;
+        else if(keys[GLFW_KEY_S]) Position -= Front * velocity;
 
-        if(keys[GLFW_KEY_A])
-            Position -= Right * velocity;
-        else if(keys[GLFW_KEY_D])
-            Position += Right * velocity;
+        if(keys[GLFW_KEY_A]) Position -= Right * velocity;
+        else if(keys[GLFW_KEY_D]) Position += Right * velocity;
 
-        GLfloat verticalVelocity = verticalMovementSpeed * deltaTime;
-        if(keys[GLFW_KEY_SPACE])
-            Position += WorldUp * verticalVelocity;
-        if(keys[GLFW_KEY_LEFT_CONTROL])
-            Position -= WorldUp * verticalVelocity;
+        if(keys[GLFW_KEY_SPACE]) Position += WorldUp * velocity;
+        if(keys[GLFW_KEY_LEFT_CONTROL]) Position -= WorldUp * velocity;
     }
 
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset,
@@ -86,16 +74,13 @@ public:
         yoffset *= MouseSensitivity;
 
         // @TODO: Option to invert Y axis.
-        Yaw   += xoffset;
+        Yaw += xoffset;
+        while(Yaw > 360.0f) Yaw -= 360.0f;
         Pitch -= yoffset;
-
-        if (constrainPitch) {
-            if (Pitch > 89.0f)
-                Pitch = 89.0f;
-            if (Pitch < -89.0f)
-                Pitch = -89.0f;
+        if(constrainPitch) {
+            if(Pitch > 89.0f) Pitch = 89.0f;
+            if(Pitch < -89.0f) Pitch = -89.0f;
         }
-
         updateCameraVectors();
     }
 
@@ -113,9 +98,10 @@ private:
     void updateCameraVectors() {
         // Calculate the new Front vector
         glm::vec3 front;
-        front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+        float cosPitch = cos(glm::radians(Pitch));
+        front.x = sin(glm::radians(Yaw)) * cosPitch;
         front.y = sin(glm::radians(Pitch));
-        front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+        front.z = -cos(glm::radians(Yaw)) * cosPitch;
         Front = glm::normalize(front);
         // Also re-calculate the Right and Up vector
         // Normalize the vectors, because their length gets closer to 0

@@ -6,19 +6,27 @@ FLAGS = -std=c++14 -Wextra -Wall
 BUILD = build
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,$(BUILD)/%.o,$(SOURCES))
+LIBS = libs
+IMGUI = $(LIBS)/imgui
+STB = $(LIBS)/stb
+IMGUISRC = $(wildcard $(IMGUI)/*.cpp)
+IMGUIOBJ = $(patsubst $(IMGUI)/%.cpp,$(IMGUI)/%.o,$(IMGUISRC))
 SHADERS = shaders
 
-main: $(OBJECTS)
-	$(CXX) $^ -o main $(DYNAMIC_LIBS)
+EXE = main
 
-$(BUILD)/%.o: %.cpp %.hpp
+$(EXE): $(OBJECTS) $(IMGUIOBJ)
+	$(CXX) $^ -o $@ $(DYNAMIC_LIBS)
+
+$(BUILD)/%.o: %.cpp
 	$(CXX) -c $< -o $@ $(FLAGS) -g
 
-$(BUILD)/main.o: main.cpp camera.hpp
-	$(CXX) -c $< -o $@ $(FLAGS) -g	
+$(IMGUI)/%.o: $(IMGUI)/%.cpp
+	$(CXX) -c $< -o $@ -Wall
 
 clean:
 	rm $(BUILD)/*
+	rm $(IMGUI)/*.o
 	rm main
 
 run:

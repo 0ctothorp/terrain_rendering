@@ -30,11 +30,11 @@ void TileGeometry::CreateTileIndices() {
     for(i = 0; i < vertices.size() / 3 - (tileSize + 1) - 1; i++) {
         if(i % (tileSize + 1) == (unsigned int)tileSize) {
             TileGeometry::indices[++j] = i + tileSize + 1;
-            TileGeometry::indices[++j] = i + tileSize + 1; 
-            TileGeometry::indices[++j] = i + 1; 
+            TileGeometry::indices[++j] = i + tileSize + 1;
+            TileGeometry::indices[++j] = i + 1;
             TileGeometry::indices[++j] = i + 1;
         } else {
-            TileGeometry::indices[++j] = i + tileSize + 1; 
+            TileGeometry::indices[++j] = i + tileSize + 1;
             TileGeometry::indices[++j] = i + 1;
         }
     }
@@ -48,7 +48,7 @@ void TileGeometry::SetBuffers() {
     SetVBO();
     SetIBO();
 
-    glBindVertexArray(0);
+    // glBindVertexArray(0);
 }
 
 void TileGeometry::SetVBO() {

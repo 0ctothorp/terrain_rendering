@@ -21,16 +21,20 @@ private:
     GLuint unifLocOffset;
     GLuint unifGlobOffset;
     GLuint unifEdgeMorph;
+
 public:
     static const string vertexShaderPath;
     static const string fragmentShaderPath;
     static Shader* shader;
 
+    TileMaterial(glm::vec2 localOffset, int tileSize, int edgeMorph);
+
+    static void SetStaticUniforms();
     static GLuint GetUnifViewMat() { return unifViewMat; }
     static GLuint GetUnifProjMat() { return unifProjMat; }
-    TileMaterial(glm::vec2 localOffset, int tileSize, int edgeMorph);
-    GLuint GetUnifLevel() { return unifLevel; }
-    GLuint GetUnifLocOffset() { return unifLocOffset; }
+    static GLuint GetUnifLoc(const string var);
+    GLuint GetUnifLevel()      { return unifLevel; }
+    GLuint GetUnifLocOffset()  { return unifLocOffset; }
     GLuint GetUnifGlobOffset() { return unifGlobOffset; }
-    GLuint GetUnifEdgeMorph() { return unifEdgeMorph; }
+    GLuint GetUnifEdgeMorph()  { return unifEdgeMorph; }
 };

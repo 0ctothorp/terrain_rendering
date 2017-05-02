@@ -9,6 +9,8 @@
 layout (location = 0) in vec3 pos;
 
 out float morphFactor;
+flat out int sample_;
+out vec3 poss;
 
 uniform mat4 projMat;
 uniform mat4 viewMat;
@@ -18,6 +20,8 @@ uniform vec2 localOffset = vec2(0, 0);
 uniform vec2 globalOffset = vec2(0, 0);
 uniform int level = 0;
 uniform int tileSize;
+uniform isampler2D heightmap;
+uniform int meshSize = 1024;
 
 float getMorphFactor(vec3 pos) {
     if(edgeMorph == EDGE_MORPH_BOTTOM && pos.z >= 1.0 - morphRegion)
@@ -29,23 +33,14 @@ float getMorphFactor(vec3 pos) {
     if(edgeMorph == EDGE_MORPH_LEFT && pos.x <= morphRegion)
         return 1 - pos.x / morphRegion;
 
-    float _morphFactor = 0.0;
-    if(edgeMorph == (EDGE_MORPH_TOP | EDGE_MORPH_RIGHT)) {
-        _morphFactor = max(0.0, 1 - pos.z / morphRegion);
-        return max(_morphFactor, (pos.x - 1.0) / morphRegion + 1);
-    }
-    if(edgeMorph == (EDGE_MORPH_TOP | EDGE_MORPH_LEFT)) {
-        _morphFactor = max(0.0, 1 - pos.z / morphRegion);
-        return max(_morphFactor, 1 - pos.x / morphRegion);
-    }
-    if(edgeMorph == (EDGE_MORPH_BOTTOM | EDGE_MORPH_LEFT)) {
-        _morphFactor = max(_morphFactor, (pos.z - 1.0) / morphRegion + 1);
-        return max(_morphFactor, 1 - pos.x / morphRegion);
-    }
-    if(edgeMorph == (EDGE_MORPH_BOTTOM | EDGE_MORPH_RIGHT)) {
-        _morphFactor = max((pos.z - 1.0) / morphRegion + 1, _morphFactor);
-        return max(_morphFactor, (pos.x - 1.0) / morphRegion + 1);
-    }
+    if(edgeMorph == (EDGE_MORPH_TOP | EDGE_MORPH_RIGHT))
+        return max(max(0.0, 1 - pos.z / morphRegion), (pos.x - 1.0) / morphRegion + 1);
+    if(edgeMorph == (EDGE_MORPH_TOP | EDGE_MORPH_LEFT))
+        return max(max(0.0, 1 - pos.x / morphRegion), 1 - pos.z / morphRegion);
+    if(edgeMorph == (EDGE_MORPH_BOTTOM | EDGE_MORPH_LEFT))
+        return max(max(0.0, 1 - pos.x / morphRegion), (pos.z - 1.0) / morphRegion + 1);
+    if(edgeMorph == (EDGE_MORPH_BOTTOM | EDGE_MORPH_RIGHT))
+        return max(max(0.0, (pos.x - 1.0) / morphRegion + 1), (pos.z - 1.0) / morphRegion + 1);
     return 0.0;
 }
 
@@ -58,6 +53,10 @@ void main() {
         vec3 pos2 = floor(position / scale2) * scale2;
         position = mix(position, pos2, morphFactor);        
     }
-    position += tileSize * vec3(localOffset.x, 0, localOffset.y) + vec3(globalOffset, 0);
+    position += tileSize * vec3(localOffset.x, 0, localOffset.y) 
+              + vec3(globalOffset.x, 0, globalOffset.y);
+    sample_ = texture(heightmap, (position.xz / meshSize) + vec2(0.5, 0.5)).r;
+    position.y = sample_ / 50.0f;
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
+    poss = position;
 }

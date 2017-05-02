@@ -1,10 +1,16 @@
 #version 330 core
 
 in float morphFactor;
+flat in int sample_;
+in vec3 poss;
 
 out vec4 color;
 
 uniform int level;
+uniform isampler2D heightmap;
+uniform sampler2D testTex;
+uniform bool debug = true;
+uniform int meshSize;
 
 vec4 red = vec4(1, 0, 0, 1);
 vec4 green = vec4(0, 1, 0, 1);
@@ -12,10 +18,31 @@ vec4 blue = vec4(0, 0, 1, 1);
 vec4 yellow = green + red;
 
 void main() {
-    if(level % 4 == 0) color = red;
-    else if(level % 4 == 1) color = green;
-    else if(level % 4 == 2) color = blue;
-    else color = yellow;
-    if(morphFactor > 0)
-        color = mix(color, vec4(1, 1, 1, 1), morphFactor);
+    if(debug) {
+        if(level % 4 == 0) color = red;
+        else if(level % 4 == 1) color = green;
+        else if(level % 4 == 2) color = blue;
+        else color = yellow;
+        if(morphFactor > 0)
+            color = mix(color, vec4(1, 1, 1, 1), morphFactor);
+        if(sample_ < -32000.0) color = vec4(0, 0, 0, 1);
+        color = mix(color, texture(testTex, poss.xz / meshSize + vec2(0.5, 0.5)), 0.5);
+
+        // if(poss.x == 0 && poss.z > 0) color = vec4(1, 0.25, 0.5, 1); // oś Z+
+        // else if(poss.x == 0) color = vec4(1, 0.5, 0.25, 1); // oś Z-
+        // if(poss.z == 0 && poss.x > 0) color = vec4(0.5, 1, 0.25, 1); // oś X+
+        // else if(poss.z == 0) color = vec4(0.25, 1, 0.5, 1); // oś X-
+
+        // if(poss.x > 0 && poss.z > 0) color = vec4(1, 0, 0, 1);
+        // if(poss.x < 0 && poss.z < 0) color = vec4(0, 1, 0, 1);
+        // if(poss.x > 0 && poss.z < 0) color = vec4(0, 0, 1, 1);
+        // if(poss.x < 0 && poss.z > 0) color = vec4(1, 1, 0, 1);
+
+        // if(poss.x / meshSize < -.450 && poss.z / meshSize > .450) color = vec4(1, 0, 1, 1);
+        // if(poss.x / meshSize < -.450 && poss.z / meshSize < -.450) color = vec4(0, 1, 1, 1);
+        // if(poss.x / meshSize > .450 && poss.z / meshSize > .450) color = vec4(1, .5, 1, 1);
+        // if(poss.x / meshSize > .450 && poss.z / meshSize < -.450) color = vec4(.5, .5, 1, 1);
+    } else {
+        color = mix(vec4(0, 1, 0, 1), vec4(1, 1, 1, 1), abs(sample_) / 8000.0);
+    }
 }

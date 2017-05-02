@@ -24,7 +24,7 @@ private:
     TileGeometry();
 
 public:
-    const int tileSize = 8;
+    const int tileSize = 64;
 
     ~TileGeometry();
     static TileGeometry* GetInstance();
