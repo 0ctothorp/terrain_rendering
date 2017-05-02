@@ -4,10 +4,8 @@
 #include "HMParser.hpp"
 
 HMParser::HMParser(const string &hmPath) {
-    data.resize(1201);
-    for(int i = 0; i < data.size(); i++)
-        data[i].resize(1201);
-
+    // Change constants with variables depending on file format.
+    data.resize(width * width);
     ParseHM(hmPath);
 }
 
@@ -20,25 +18,19 @@ void HMParser::ParseHM(const string &hmPath) {
         // - SRTM3 .hgt file has 1201 rows and 1201 samples (in each row)
         // - big-endian 16-bit signed integers - need to byte-swap
         // - height data every 3 arc-seconds in both directions
-        int i;
-        for(i = 0; i < 1201; i++) {
-            hmFile.read(reinterpret_cast<char*>(data[i].data()), sizeof(short) * 1201);
-            for(int j = 0; j < 1201; j++) {
-                short swapped = 0;
-                swapped = data[i][j] << 8;
-                swapped |= data[i][j] >> 8;
-                data[i][j] = swapped;
-            }
+        hmFile.read(reinterpret_cast<char*>(data.data()), sizeof(short) * width * width);
+        for(int i = 0; i < width * width; i++) {
+            data[i] = (data[i] << 8) | ((data[i] & 0xff00) >> 8);
         }
 
         hmFile.close();
     } catch(const ifstream::failure &e) {
-        cerr << "[EXCEPTION: HMParser::HMParser] " << e.what() << '\n'
+        cerr << "[EXCEPTION: HMParser::ParseHM] " << e.what() << '\n'
              << "Error code: " << e.code() << '\n';
         exit(EXIT_FAILURE);
     }
 }
 
-vector< vector<short> >* HMParser::GetDataPtr() {
+vector<short>* HMParser::GetDataPtr() {
     return &data;
 }

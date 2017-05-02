@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include <GL/glew.h>
@@ -13,8 +14,11 @@ using namespace std;
 
 class LODPlane {
 private:
+    // static unique_ptr<LODPlane> instance;
+    GLuint heightmapTex;
+    GLuint testTex;
+
     vector< vector<TileMesh> > tiles;
-    const int planeWidth = 512;
     int layers;
     int lodMeshWidth;  
     Camera *camera;
@@ -23,6 +27,12 @@ private:
     void CreateTiles();
 
 public:
+    static const int planeWidth = 1024;
+    static constexpr float morphRegion = 0.3f;
+    
     LODPlane(int windowW, int windowH, Camera *camera = nullptr);
+    ~LODPlane();
+
+    void SetHeightmap(vector<short>*);
     void Draw();
 };
