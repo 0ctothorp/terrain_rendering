@@ -110,32 +110,32 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    // GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    // GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, 1201, 1201, 0, GL_RED_INTEGER, GL_SHORT, 
                           hmData->data()));
 
-    // debug texture
-    // for some reason initializing it in LODPlane constructor gives black texture in a shader
-    int x, y, n;
-    unsigned char *imgData = stbi_load("textures/test.jpg", &x, &y, &n, 0);
-    if(imgData == NULL) throw "couldn't load textures/test.jpg";
-    // ... process data if not NULL ...
-    // ... x = width, y = height, n = # 8-bit components per pixel ...
-    // ... replace '0' with '1'..'4' to force that many components per pixel
-    // ... but 'n' will always be the number that it would have been if you said 0
-    GL_CHECK(glUniform1i(glGetUniformLocation(shader->GetProgramId(), "testTex"), 1));
+    // // debug texture
+    // // for some reason initializing it in LODPlane constructor gives black texture in a shader
+    // int x, y, n;
+    // unsigned char *imgData = stbi_load("textures/test.jpg", &x, &y, &n, 0);
+    // if(imgData == NULL) throw "couldn't load textures/test.jpg";
+    // // ... process data if not NULL ...
+    // // ... x = width, y = height, n = # 8-bit components per pixel ...
+    // // ... replace '0' with '1'..'4' to force that many components per pixel
+    // // ... but 'n' will always be the number that it would have been if you said 0
+    // GL_CHECK(glUniform1i(glGetUniformLocation(shader->GetProgramId(), "testTex"), 1));
 
-    GL_CHECK(glGenTextures(1, &testTex));
-    GL_CHECK(glActiveTexture(GL_TEXTURE0 + 1));
-    GL_CHECK(glBindTexture(GL_TEXTURE_2D, testTex));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-                          imgData));
-    stbi_image_free(imgData);
+    // GL_CHECK(glGenTextures(1, &testTex));
+    // GL_CHECK(glActiveTexture(GL_TEXTURE0 + 1));
+    // GL_CHECK(glBindTexture(GL_TEXTURE_2D, testTex));
+    // GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    // GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    // GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    // GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    // GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+    //                       imgData));
+    // stbi_image_free(imgData);
 }

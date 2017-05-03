@@ -13,6 +13,7 @@
 #include "mouse.hpp"
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
+// #include "geotiffReader.hpp"
 
 using namespace std;
 
@@ -128,6 +129,8 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
 }
 
 int main(int argc, char **argv) {
+    // GeotiffReader geotiffReader("heightmaps/test.tif");
+
     auto window = GetGLFWwindow("OpenGL terrain rendering");
 
     ImGui_ImplGlfwGL3_Init(window, false);
@@ -139,7 +142,8 @@ int main(int argc, char **argv) {
 
     LODPlane lodPlane(WINDOW_WIDTH, WINDOW_HEIGHT, &camera);
     HMParser hmParser("heightmaps/N50E016.hgt");
-    lodPlane.SetHeightmap(hmParser.GetDataPtr());
+    // vector<short> terrainData{geotiffReader.GetData(), geotiffReader.GetData() + 601 * 1201};
+    lodPlane.SetHeightmap(hmParser.GetDataPtr() /*&terrainData*/);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -164,9 +168,9 @@ int main(int argc, char **argv) {
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+        //GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         lodPlane.Draw();
-        GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        //GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
         ImGui::Render();
         glfwSwapBuffers(window);
     }
