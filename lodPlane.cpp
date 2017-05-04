@@ -2,9 +2,6 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "libs/stb/stb_image.h"
-
 #include "lodPlane.hpp"
 #include "tileGeometry.hpp"
 #include "tileMaterial.hpp"
