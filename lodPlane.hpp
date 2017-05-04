@@ -14,7 +14,6 @@ using namespace std;
 
 class LODPlane {
 private:
-    // static unique_ptr<LODPlane> instance;
     GLuint heightmapTex;
     GLuint testTex;
 
@@ -30,7 +29,7 @@ public:
     static const int planeWidth = 1024;
     static constexpr float morphRegion = 0.3f;
     
-    LODPlane(int windowW, int windowH, Camera *camera = nullptr);
+    LODPlane(int windowW, int windowH, Camera *camera);
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);

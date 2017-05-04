@@ -13,7 +13,6 @@ LODPlane::LODPlane(int windowW, int windowH, Camera *_camera)
 : camera(_camera) {
     CalcLayersNumber();
     CreateTiles();
-    // TileMesh::globalOffset = glm::vec2(planeWidth / 2, planeWidth / 2);
     GL_CHECK(
         glUniform2f(
             glGetUniformLocation(TileMaterial::shader->GetProgramId(), "globalOffset"), 
@@ -45,7 +44,6 @@ void LODPlane::CreateTiles() {
     tiles[0].push_back(TileMesh(glm::vec2(0, 0), EdgeMorph::NONE));
 
     for(int layer = 0; layer < layers; layer++) {
-        // Left strip
         int scale = pow(2, layer);
         tiles[layer].push_back(
             TileMesh(glm::vec2(-scale * 2, -scale * 2), EdgeMorph::TOP | EdgeMorph::LEFT));
@@ -56,17 +54,14 @@ void LODPlane::CreateTiles() {
         tiles[layer].push_back(
             TileMesh(glm::vec2(-scale * 2, scale), EdgeMorph::LEFT | EdgeMorph::BOTTOM));
 
-        // Middle-left strip
         tiles[layer].push_back(
             TileMesh(glm::vec2(-scale, -scale * 2), EdgeMorph::TOP));
         tiles[layer].push_back(
             TileMesh(glm::vec2(-scale, scale), EdgeMorph::BOTTOM));
 
-        // Middle-right strip
         tiles[layer].push_back(TileMesh(glm::vec2(0, -scale * 2),  EdgeMorph::TOP));
         tiles[layer].push_back(TileMesh(glm::vec2(0, scale),  EdgeMorph::BOTTOM));
 
-        // Right strip
         tiles[layer].push_back(
             TileMesh(glm::vec2(scale, -scale * 2), EdgeMorph::TOP | EdgeMorph::RIGHT));
         tiles[layer].push_back(TileMesh(glm::vec2(scale, -scale), EdgeMorph::RIGHT));
@@ -100,20 +95,18 @@ void LODPlane::Draw() {
 
 void LODPlane::SetHeightmap(vector<short>* hmData) {
     Shader* shader = TileMaterial::shader;
-    if(shader == nullptr) throw "Static field shader not initialized.";
+    if(!shader) throw "Static field shader not initialized.";
     GL_CHECK(glUseProgram(shader->GetProgramId()));
     GL_CHECK(glUniform1i(glGetUniformLocation(shader->GetProgramId(), "heightmap"), 0));
 
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    // Inform OpenGL that the data in memory is byte-aligned
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    // Make OpenGL swap bytes for me (because hgt files are big-endian)
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, 1201, 1201, 0, GL_RED_INTEGER, GL_SHORT, 
                           hmData->data()));
