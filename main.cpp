@@ -13,7 +13,6 @@
 #include "mouse.hpp"
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
-// #include "geotiffReader.hpp"
 
 using namespace std;
 
@@ -27,14 +26,13 @@ const int MAX_KEY_CODE = 348;
 bool keys[MAX_KEY_CODE]{false};
 bool cursor = false;
 
-void KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/) {
+void KeyCallback(GLFWwindow* window, int key, int, int action, int) {
     if(key == -1) {
         cerr << "Pressed unknown key\n";
         return;
     }
 
     if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
-        //glfwSetWindowShouldClose(window, GL_TRUE);
         cursor = !cursor;   
         glfwSetInputMode(window, GLFW_CURSOR, cursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
         return;
@@ -44,14 +42,12 @@ void KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int 
     else if(action == GLFW_RELEASE) keys[key] = false;
 }
 
-void GlfwErrorCallback(int /*error*/, const char* description) {
-    cerr << "[GLFW ERROR] " << description << '\n';
+void GlfwErrorCallback(int error, const char* description) {
+    cerr << "[GLFW ERROR " << error << "] " << description << '\n';
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    if(!cursor) {
-        mouse.MoveCallback(xpos, ypos);
-    }
+    if(!cursor) mouse.MoveCallback(xpos, ypos);
 }
 
 void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
@@ -95,7 +91,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     }
     glfwMakeContextCurrent(window); 
 
-    glewExperimental = GL_TRUE; // Needed for core profile
+    glewExperimental = GL_TRUE;
     GLenum err;
     if((err = glewInit()) != GLEW_OK) {
         cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << "\n";
@@ -103,7 +99,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     }   
 
     GL_CHECK();
-    cerr << "Ignore preceding error.\n" << endl; // Common GLEW/OpenGL error
+    cerr << "Ignore preceding error.\n" << endl;
 
     GL_CHECK(glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
     GL_CHECK(glEnable(GL_DEPTH_TEST));
@@ -129,28 +125,20 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
 }
 
 int main(int argc, char **argv) {
-    // GeotiffReader geotiffReader("heightmaps/test.tif");
-
     auto window = GetGLFWwindow("OpenGL terrain rendering");
-
     ImGui_ImplGlfwGL3_Init(window, false);
-
     TileMaterial::shader = new Shader{TileMaterial::vertexShaderPath, 
                                       TileMaterial::fragmentShaderPath};
     TileMaterial::SetStaticUniforms();
     TileMesh::SetTileGeom();
-
     LODPlane lodPlane(WINDOW_WIDTH, WINDOW_HEIGHT, &camera);
     HMParser hmParser("heightmaps/N50E016.hgt");
-    // vector<short> terrainData{geotiffReader.GetData(), geotiffReader.GetData() + 601 * 1201};
-    lodPlane.SetHeightmap(hmParser.GetDataPtr() /*&terrainData*/);
+    lodPlane.SetHeightmap(hmParser.GetDataPtr());
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
-
     bool show_test_window = true;
-
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
         deltaTime = time - prevFrameTime;
@@ -168,9 +156,9 @@ int main(int argc, char **argv) {
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        //GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+        GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         lodPlane.Draw();
-        //GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
         ImGui::Render();
         glfwSwapBuffers(window);
     }

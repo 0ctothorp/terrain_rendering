@@ -27,6 +27,7 @@ void main() {
             color = mix(color, vec4(1, 1, 1, 1), morphFactor);
         if(sample_ < -32000.0) color = vec4(0, 0, 0, 1);
         // color = mix(color, texture(testTex, poss.xz / meshSize + vec2(0.5, 0.5)), 0.5);
+        // 1249 to max height
         color = vec4(sample_ / 1249.0f, .1, .1, 1);
     } else {
         color = mix(vec4(0, 1, 0, 1), vec4(1, 1, 1, 1), abs(sample_) / 8000.0);

@@ -55,8 +55,13 @@ void main() {
     }
     position += tileSize * vec3(localOffset.x, 0, localOffset.y) 
               + vec3(globalOffset.x, 0, globalOffset.y);
-    sample_ = texture(heightmap, (position.xz / meshSize) + vec2(0.5f, 0.5f)).r;
-    position.y = sample_ / 50.0f;
+    int heightmapSize = textureSize(heightmap, 0).x;
+    int meshSizeMinusHgtMapSize = heightmapSize - meshSize;
+    sample_ = texture(
+        heightmap, 
+        (position.xz + vec2(512, 512) + meshSizeMinusHgtMapSize / 2.0f) / heightmapSize
+    ).r;
+    position.y = sample_ / 40.0f;
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     poss = position;
 }
