@@ -13,17 +13,16 @@ LODPlane::LODPlane(int windowW, int windowH, Camera *_camera)
 : camera(_camera) {
     CalcLayersNumber();
     CreateTiles();
-    GL_CHECK(
-        glUniform2f(
-            glGetUniformLocation(TileMaterial::shader->GetProgramId(), "globalOffset"), 
-            TileMesh::globalOffset.x, TileMesh::globalOffset.y
-        )
-    );    
+    GL_CHECK(glUniform2f(
+        TileMaterial::GetUnifGlobOffset(), TileMesh::globalOffset.x, TileMesh::globalOffset.y
+    ));
+    unifHeightmapOffset = GL_CHECK(
+        glGetUniformLocation(TileMaterial::shader->GetProgramId(), "heightmapOffset")
+    );
 }
 
 LODPlane::~LODPlane() {
     GL_CHECK(glDeleteTextures(1, &heightmapTex));
-    GL_CHECK(glDeleteTextures(1, &testTex));
 }
 
 void LODPlane::CalcLayersNumber() {
@@ -77,6 +76,7 @@ void LODPlane::Draw() {
     glm::mat4 viewMat = camera->GetViewMatrix();
     GL_CHECK(glUniformMatrix4fv(TileMaterial::GetUnifViewMat(), 1, GL_FALSE, 
                                 glm::value_ptr(viewMat)));
+    // GL_CHECK(glUniform2f(unifHeightmapOffset, heightmapOffsetX, heightmapOffsetY));
     int indicesSize = TileGeometry::GetInstance()->GetIndicesSize();
 
     for(int i = 0; i < tiles.size(); i++) {

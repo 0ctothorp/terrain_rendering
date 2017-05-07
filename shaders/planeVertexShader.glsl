@@ -22,6 +22,7 @@ uniform int level = 0;
 uniform int tileSize;
 uniform isampler2D heightmap;
 uniform int meshSize = 1024;
+uniform vec2 heightmapOffset;
 
 float getMorphFactor(vec3 pos) {
     if(edgeMorph == EDGE_MORPH_BOTTOM && pos.z >= 1.0 - morphRegion)
@@ -59,7 +60,8 @@ void main() {
     int meshSizeMinusHgtMapSize = heightmapSize - meshSize;
     sample_ = texture(
         heightmap, 
-        (position.xz + vec2(512, 512) + meshSizeMinusHgtMapSize / 2.0f) / heightmapSize
+        (position.xz + vec2(512, 512) + meshSizeMinusHgtMapSize / 2.0f + heightmapOffset) 
+        / heightmapSize
     ).r;
     position.y = sample_ / 40.0f;
     gl_Position = projMat * viewMat * vec4(position, 1.0f);

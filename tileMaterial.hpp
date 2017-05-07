@@ -17,9 +17,9 @@ private:
     static const glm::mat4 projectionMatrix;
     static GLuint unifViewMat;
     static GLuint unifProjMat;
+    static GLuint unifGlobOffset;
     GLuint unifLevel;
     GLuint unifLocOffset;
-    GLuint unifGlobOffset;
     GLuint unifEdgeMorph;
 
 public:
@@ -33,8 +33,8 @@ public:
     static GLuint GetUnifViewMat() { return unifViewMat; }
     static GLuint GetUnifProjMat() { return unifProjMat; }
     static GLuint GetUnifLoc(const string var);
+    static GLuint GetUnifGlobOffset() { return unifGlobOffset; }
     GLuint GetUnifLevel()      { return unifLevel; }
     GLuint GetUnifLocOffset()  { return unifLocOffset; }
-    GLuint GetUnifGlobOffset() { return unifGlobOffset; }
     GLuint GetUnifEdgeMorph()  { return unifEdgeMorph; }
 };

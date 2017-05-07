@@ -153,6 +153,8 @@ int main(int argc, char **argv) {
         }
 
         camera.Move(keys, deltaTime);
+        GL_CHECK(glUniform2f(TileMaterial::GetUnifGlobOffset(), camera.position.x, 
+                             camera.position.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 

@@ -20,6 +20,7 @@ const glm::mat4 TileMaterial::projectionMatrix = glm::perspective(
 Shader* TileMaterial::shader = nullptr;
 GLuint TileMaterial::unifViewMat{};
 GLuint TileMaterial::unifProjMat{};
+GLuint TileMaterial::unifGlobOffset{};
 
 
 GLuint TileMaterial::GetUnifLoc(const string var) {
@@ -31,7 +32,6 @@ TileMaterial::TileMaterial(glm::vec2 localOffset, int tileSize, int edgeMorph) {
     GL_CHECK(glUseProgram(shader->GetProgramId()));
     unifLevel      = GL_CHECK(GetUnifLoc("level"));
     unifLocOffset  = GL_CHECK(GetUnifLoc("localOffset"));
-    unifGlobOffset = GL_CHECK(GetUnifLoc("globalOffset"));
     unifEdgeMorph  = GL_CHECK(GetUnifLoc("edgeMorph"));
 
     GL_CHECK(glUniform1i(GetUnifLoc("tileSize"), TileGeometry::GetInstance()->tileSize));
@@ -43,6 +43,7 @@ void TileMaterial::SetStaticUniforms() {
     GL_CHECK(glUseProgram(shader->GetProgramId()));
     unifViewMat = GL_CHECK(GetUnifLoc("viewMat"));
     unifProjMat = GL_CHECK(GetUnifLoc("projMat"));
+    unifGlobOffset = GL_CHECK(GetUnifLoc("globalOffset"));
     GL_CHECK(glUniformMatrix4fv(unifProjMat, 1, GL_FALSE, glm::value_ptr(projectionMatrix)));
     GL_CHECK(glUniform1i(GetUnifLoc("meshSize"), LODPlane::planeWidth));
 }
