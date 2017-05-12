@@ -16,6 +16,7 @@
 
 using namespace std;
 
+
 int WINDOW_WIDTH = 1000;
 int WINDOW_HEIGHT = 750;
 

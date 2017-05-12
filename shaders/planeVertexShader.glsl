@@ -9,7 +9,7 @@
 layout (location = 0) in vec3 pos;
 
 out float morphFactor;
-flat out int sample_;
+out float sample_;
 out vec3 poss;
 
 uniform mat4 projMat;
@@ -20,7 +20,7 @@ uniform vec2 localOffset = vec2(0, 0);
 uniform vec2 globalOffset = vec2(0, 0);
 uniform int level = 0;
 uniform int tileSize;
-uniform isampler2D heightmap;
+uniform sampler2D heightmap;
 uniform int meshSize = 1024;
 uniform vec2 heightmapOffset;
 
@@ -47,23 +47,20 @@ float getMorphFactor(vec3 pos) {
 
 void main() {
     int scale = int(pow(2, level));
-    vec3 position = tileSize * scale * pos;
+    vec3 position = tileSize * (scale * pos + vec3(localOffset.x, 0, localOffset.y));
     morphFactor = getMorphFactor(pos);
     if(morphFactor > 0.0) {
         int scale2 = scale * 2;
         vec3 pos2 = floor(position / scale2) * scale2;
         position = mix(position, pos2, morphFactor);        
     }
-    position += tileSize * vec3(localOffset.x, 0, localOffset.y) 
-              + vec3(globalOffset.x, 0, globalOffset.y);
+    position += vec3(globalOffset.x, 0, globalOffset.y);
     int heightmapSize = textureSize(heightmap, 0).x;
-    int meshSizeMinusHgtMapSize = heightmapSize - meshSize;
     sample_ = texture(
         heightmap, 
-        (position.xz + vec2(512, 512) + meshSizeMinusHgtMapSize / 2.0f + heightmapOffset) 
-        / heightmapSize
+        (position.xz + vec2(512.0f, 512.0f) + (heightmapSize - meshSize) / 2.0f) / heightmapSize
     ).r;
-    position.y = sample_ / 40.0f;
+    position.y = sample_ * 1000;
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     poss = position;
 }

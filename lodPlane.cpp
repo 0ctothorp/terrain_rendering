@@ -76,7 +76,6 @@ void LODPlane::Draw() {
     glm::mat4 viewMat = camera->GetViewMatrix();
     GL_CHECK(glUniformMatrix4fv(TileMaterial::GetUnifViewMat(), 1, GL_FALSE, 
                                 glm::value_ptr(viewMat)));
-    // GL_CHECK(glUniform2f(unifHeightmapOffset, heightmapOffsetX, heightmapOffsetY));
     int indicesSize = TileGeometry::GetInstance()->GetIndicesSize();
 
     for(int i = 0; i < tiles.size(); i++) {
@@ -104,10 +103,10 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, 1201, 1201, 0, GL_RED_INTEGER, GL_SHORT, 
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
                           hmData->data()));
 }
