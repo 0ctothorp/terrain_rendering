@@ -31,7 +31,7 @@ public:
     static const int planeWidth = 1024;
     static constexpr float morphRegion = 0.3f;
     
-    LODPlane(int windowW, int windowH, Camera *camera);
+    LODPlane(Camera *camera);
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);

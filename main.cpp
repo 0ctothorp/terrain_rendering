@@ -13,15 +13,13 @@
 #include "mouse.hpp"
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
+#include "window.hpp"
 
 using namespace std;
 
 
-int WINDOW_WIDTH = 1000;
-int WINDOW_HEIGHT = 750;
-
 Camera camera(glm::vec3(0, 10, 0));
-Mouse mouse(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, &camera);
+Mouse mouse(Window::width / 2, Window::height / 2, &camera);
 
 const int MAX_KEY_CODE = 348;
 bool keys[MAX_KEY_CODE]{false};
@@ -70,8 +68,8 @@ GLFWwindow* GetGLFWwindow(const char *name){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    if (WINDOW_WIDTH == 0 || WINDOW_HEIGHT == 0) {
-        // if 0 then WINDOWLESS FULL SCREEN :
+    if (Window::width == 0 || Window::height == 0) {
+        // if 0 then Window.width FULL SCREEN :
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -79,9 +77,10 @@ GLFWwindow* GetGLFWwindow(const char *name){
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         window = glfwCreateWindow(mode->width, mode->height, name, monitor, nullptr);
-        WINDOW_WIDTH = mode->width; WINDOW_HEIGHT = mode->height;
+        Window::width = mode->width; 
+        Window::height = mode->height;
     } else {
-        window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, name, nullptr, nullptr);
+        window = glfwCreateWindow(Window::width, Window::height, name, nullptr, nullptr);
     }
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -102,7 +101,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     GL_CHECK();
     cerr << "Ignore preceding error.\n" << endl;
 
-    GL_CHECK(glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
+    GL_CHECK(glViewport(0, 0, Window::width, Window::height));
     GL_CHECK(glEnable(GL_DEPTH_TEST));
     GL_CHECK(glEnable(GL_BLEND));
     GL_CHECK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -132,7 +131,7 @@ int main(int argc, char **argv) {
                                       TileMaterial::fragmentShaderPath};
     TileMaterial::SetStaticUniforms();
     TileMesh::SetTileGeom();
-    LODPlane lodPlane(WINDOW_WIDTH, WINDOW_HEIGHT, &camera);
+    LODPlane lodPlane(&camera);
     HMParser hmParser("heightmaps/N50E016.hgt");
     lodPlane.SetHeightmap(hmParser.GetDataPtr());
 

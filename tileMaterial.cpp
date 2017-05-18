@@ -6,14 +6,14 @@
 #include "tileMaterial.hpp"
 #include "glDebug.hpp"
 #include "lodPlane.hpp"
+#include "window.hpp"
 
 
 const string TileMaterial::vertexShaderPath = "shaders/planeVertexShader.glsl";
 const string TileMaterial::fragmentShaderPath = "shaders/planeFragmentShader.glsl";
 const glm::mat4 TileMaterial::projectionMatrix = glm::perspective(
     glm::radians(60.0f), 
-    // @Refactor: zastąpić te wartości zmiennymi
-    800.0f / 600.0f,
+    (float)Window::width / (float)Window::height,
     0.01f,
     2000.0f
 );

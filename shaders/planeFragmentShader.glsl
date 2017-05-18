@@ -22,7 +22,8 @@ void main() {
     else if(level % 4 == 2) color = blue;
     else color = yellow;
     if(morphFactor > 0) color = mix(color, vec4(1, 1, 1, 1), morphFactor);
-    if(sample_ < -32000.0) color = vec4(0, 0, 0, 1);
-    if(debug) color = mix(color, vec4(sample_, sample_, 0, 1), 0.7);
-    else color = vec4(sample_, .1, .1, 1);
+    float _sample = sample_ * 15;
+    // if(_sample < -32000.0) color = vec4(0, 0, 0, 1);
+    if(debug) color = mix(color, vec4(_sample, _sample, 0, 1), 0.7);
+    else color = vec4(_sample, .1, .1, 1);
 }

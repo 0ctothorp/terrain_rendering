@@ -9,7 +9,7 @@
 #include "tileMesh.hpp"
 
 
-LODPlane::LODPlane(int windowW, int windowH, Camera *_camera) 
+LODPlane::LODPlane(Camera *_camera) 
 : camera(_camera) {
     CalcLayersNumber();
     CreateTiles();
