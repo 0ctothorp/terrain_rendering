@@ -9,21 +9,20 @@
 #include "tileMesh.hpp"
 
 
-LODPlane::LODPlane(int windowW, int windowH, Camera *_camera) 
+LODPlane::LODPlane(Camera *_camera) 
 : camera(_camera) {
     CalcLayersNumber();
     CreateTiles();
-    GL_CHECK(
-        glUniform2f(
-            glGetUniformLocation(TileMaterial::shader->GetProgramId(), "globalOffset"), 
-            TileMesh::globalOffset.x, TileMesh::globalOffset.y
-        )
-    );    
+    GL_CHECK(glUniform2f(
+        TileMaterial::GetUnifGlobOffset(), TileMesh::globalOffset.x, TileMesh::globalOffset.y
+    ));
+    unifHeightmapOffset = GL_CHECK(
+        glGetUniformLocation(TileMaterial::shader->GetProgramId(), "heightmapOffset")
+    );
 }
 
 LODPlane::~LODPlane() {
     GL_CHECK(glDeleteTextures(1, &heightmapTex));
-    GL_CHECK(glDeleteTextures(1, &testTex));
 }
 
 void LODPlane::CalcLayersNumber() {
@@ -104,10 +103,10 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, 1201, 1201, 0, GL_RED_INTEGER, GL_SHORT, 
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
                           hmData->data()));
 }

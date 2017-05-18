@@ -1,7 +1,7 @@
 CXX = g++
 
 DYNAMIC_LIBS = -lGL -lGLEW -lglfw -lgdal
-FLAGS = -std=c++11 -Wextra -Wall
+FLAGS = -std=c++14 -Wall
 
 BUILD = build
 SOURCES = $(wildcard *.cpp)

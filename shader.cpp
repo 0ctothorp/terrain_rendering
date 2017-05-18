@@ -32,14 +32,11 @@ string Shader::LoadShaderFile(string path) {
     try {
         shaderFile.open(path);
         stringstream shaderStream;
-        // Read file's buffer contents into stream
         shaderStream << shaderFile.rdbuf();
         shaderFile.close();
         shaderCode = shaderStream.str();
     } catch(const ifstream::failure &e) {
-        // @Refactor: e.what() gives poor error description; better w/ strerror(errno)
-        cerr << "[EXCEPTION: Shader::LoadShaderFile] " << e.what() << '\n'
-             << e.code() << '\n';
+        cerr << "[EXCEPTION: Shader::LoadShaderFile] " << e.what() << '\n' << e.code() << '\n';
         exit(1);
     }
     return shaderCode;
@@ -59,7 +56,6 @@ void Shader::CompileShader(GLuint vertexShader, GLuint fragmentShader) {
         exit(1);
     } else result = GL_FALSE;
 
-    // @Refactor: Code repetition.
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result);
     glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLength);

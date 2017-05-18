@@ -15,12 +15,14 @@ using namespace std;
 class LODPlane {
 private:
     GLuint heightmapTex;
-    GLuint testTex;
+    GLuint unifHeightmapOffset;
 
     vector< vector<TileMesh> > tiles;
     int layers;
     int lodMeshWidth;  
     Camera *camera;
+    float heightmapOffsetX = 0;
+    float heightmapOffsetY = 0;
 
     void CalcLayersNumber();
     void CreateTiles();
@@ -29,7 +31,7 @@ public:
     static const int planeWidth = 1024;
     static constexpr float morphRegion = 0.3f;
     
-    LODPlane(int windowW, int windowH, Camera *camera);
+    LODPlane(Camera *camera);
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);

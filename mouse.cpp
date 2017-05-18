@@ -2,7 +2,6 @@
 
 #include "mouse.hpp"
 
-using namespace std;
 
 Mouse::Mouse(double _x, double _y, Camera *_camera) :
 lastX(_x),
