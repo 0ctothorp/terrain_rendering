@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -21,9 +22,12 @@ const GLfloat COL_OFFSET     =  0.15f;
 
 class Camera {
 private:
-    // Calculates the front vector from the Camera's (updated) Euler Angles
+    float Yaw;
+    float Pitch;
+    float movementSpeed;
+    float MouseSensitivity;
+
     void updateCameraVectors() {
-        // Calculate the new front vector
         glm::vec3 _front;
         float cosPitch = cos(glm::radians(Pitch));
         _front.x = sin(glm::radians(Yaw)) * cosPitch;
@@ -34,20 +38,19 @@ private:
         // the more you look up or down which results in slower movement.
         right = glm::normalize(glm::cross(front, WorldUp));
         up    = glm::normalize(glm::cross(right, front));
+        leftViewLimit = glm::rotate(glm::vec2(front.x, front.z), glm::radians(-fov / 2.f));
+        rightViewLimit = glm::rotate(glm::vec2(front.x, front.z), glm::radians(fov / 2.f));
     }
 
 public:
+    static constexpr float fov = 60.f;
     glm::vec3 position;
     glm::vec3 front;
     glm::vec3 up;
     glm::vec3 right;
     glm::vec3 WorldUp;
-
-    GLfloat Yaw;
-    GLfloat Pitch;
-
-    GLfloat movementSpeed;
-    GLfloat MouseSensitivity;
+    glm::vec2 leftViewLimit;
+    glm::vec2 rightViewLimit;
 
     Camera(glm::vec3 position)
     : front(glm::vec3(0.0f, 0.0f, -1.0f))
@@ -57,6 +60,8 @@ public:
         WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
         right = glm::normalize(glm::cross(front, WorldUp));
         up    = glm::normalize(glm::cross(right, front));
+        leftViewLimit = glm::rotate(glm::vec2(front.x, front.z), glm::radians(-fov / 2.f));
+        rightViewLimit = glm::rotate(glm::vec2(front.x, front.z), glm::radians(fov / 2.f));
     }
 
     glm::mat4 GetViewMatrix() {

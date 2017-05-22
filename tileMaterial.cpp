@@ -7,12 +7,13 @@
 #include "glDebug.hpp"
 #include "lodPlane.hpp"
 #include "window.hpp"
+#include "camera.hpp"
 
 
 const string TileMaterial::vertexShaderPath = "shaders/planeVertexShader.glsl";
 const string TileMaterial::fragmentShaderPath = "shaders/planeFragmentShader.glsl";
 const glm::mat4 TileMaterial::projectionMatrix = glm::perspective(
-    glm::radians(60.0f), 
+    glm::radians(Camera::fov), 
     (float)Window::width / (float)Window::height,
     0.01f,
     2000.0f

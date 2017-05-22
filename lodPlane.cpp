@@ -81,15 +81,57 @@ void LODPlane::Draw() {
     for(int i = 0; i < tiles.size(); i++) {
         glUniform1i(tiles[i][0].material.GetUnifLevel(), i);
         for(int j = 0; j < tiles[i].size(); j++) {
-            GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
-                                 tiles[i][j].GetLocalOffset().x, tiles[i][j].GetLocalOffset().y));
-            GL_CHECK(glUniform1i(tiles[i][j].material.GetUnifEdgeMorph(), 
-                                 tiles[i][j].GetEdgeMorph()));
-            GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, indicesSize, GL_UNSIGNED_INT, 
-                                    TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+            if(IsTileInsideCameraView(i, j)) {
+                GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
+                                     tiles[i][j].GetLocalOffset().x, 
+                                     tiles[i][j].GetLocalOffset().y));
+                GL_CHECK(glUniform1i(tiles[i][j].material.GetUnifEdgeMorph(), 
+                                     tiles[i][j].GetEdgeMorph()));
+                GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, indicesSize, GL_UNSIGNED_INT, 
+                                        TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+            } 
         }
     }
     GL_CHECK(glBindVertexArray(0));
+}
+
+bool LODPlane::IsTileInsideCameraView(int i, int j) {
+    glm::vec2 realTilePosition = tiles[i][j].GetLocalOffset() * 
+                                 (float)TileGeometry::tileSize + 
+                                 glm::vec2(camera->position.x, camera->position.z);
+    glm::vec2 realTilePosition2 = tiles[i][j].GetLocalOffset() + 
+                                  glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f) 
+                                  * (float)TileGeometry::tileSize + 
+                                  glm::vec2(camera->position.x, camera->position.z);     
+    glm::vec2 realTilePosition3 = tiles[i][j].GetLocalOffset() + 
+                                  glm::vec2((float)TileGeometry::tileSize * pow(2, i),
+                                            (float)TileGeometry::tileSize * pow(2, i)) 
+                                  * (float)TileGeometry::tileSize + 
+                                  glm::vec2(camera->position.x, camera->position.z);
+    glm::vec2 realTilePosition4 = tiles[i][j].GetLocalOffset() + 
+                                  glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)) 
+                                  * (float)TileGeometry::tileSize + 
+                                  glm::vec2(camera->position.x, camera->position.z); 
+    glm::vec2 tilePointingVector = glm::normalize(realTilePosition);
+    glm::vec2 tilePointingVector2 = glm::normalize(realTilePosition2);
+    glm::vec2 tilePointingVector3 = glm::normalize(realTilePosition3);
+    glm::vec2 tilePointingVector4 = glm::normalize(realTilePosition4);
+    float leftAngle = acos(glm::dot(camera->leftViewLimit, tilePointingVector));
+    float rightAngle = acos(glm::dot(tilePointingVector, camera->rightViewLimit));
+    float leftAngle2 = acos(glm::dot(camera->leftViewLimit, tilePointingVector2));
+    float rightAngle2 = acos(glm::dot(tilePointingVector2, camera->rightViewLimit));
+    float leftAngle3 = acos(glm::dot(camera->leftViewLimit, tilePointingVector3));
+    float rightAngle3 = acos(glm::dot(tilePointingVector3, camera->rightViewLimit));
+    float leftAngle4 = acos(glm::dot(camera->leftViewLimit, tilePointingVector4));
+    float rightAngle4 = acos(glm::dot(tilePointingVector4, camera->rightViewLimit));
+    return (abs(leftAngle) + abs(rightAngle) > glm::radians(Camera::fov - 1) && abs(leftAngle) + 
+            abs(rightAngle) < glm::radians(Camera::fov + 1)) ||
+           (abs(leftAngle2) + abs(rightAngle2) > glm::radians(Camera::fov - 1) && abs(leftAngle2) + 
+            abs(rightAngle2) < glm::radians(Camera::fov + 1)) ||
+           (abs(leftAngle3) + abs(rightAngle3) > glm::radians(Camera::fov - 1) && abs(leftAngle3) + 
+            abs(rightAngle3) < glm::radians(Camera::fov + 1)) || 
+           (abs(leftAngle4) + abs(rightAngle4) > glm::radians(Camera::fov - 1) && abs(leftAngle4) + 
+            abs(rightAngle4) < glm::radians(Camera::fov + 1));
 }
 
 void LODPlane::SetHeightmap(vector<short>* hmData) {

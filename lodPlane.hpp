@@ -21,11 +21,12 @@ private:
     int layers;
     int lodMeshWidth;  
     Camera *camera;
-    float heightmapOffsetX = 0;
-    float heightmapOffsetY = 0;
+    // float heightmapOffsetX = 0;
+    // float heightmapOffsetY = 0;
 
     void CalcLayersNumber();
     void CreateTiles();
+    bool IsTileInsideCameraView(int i, int j);
 
 public:
     static const int planeWidth = 1024;
