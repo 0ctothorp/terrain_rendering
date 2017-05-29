@@ -9,8 +9,7 @@
 #include "tileMesh.hpp"
 
 
-LODPlane::LODPlane(Camera *_camera) 
-: camera(_camera) {
+LODPlane::LODPlane() {
     CalcLayersNumber();
     CreateTiles();
     GL_CHECK(glUniform2f(
@@ -70,7 +69,7 @@ void LODPlane::CreateTiles() {
     }
 }
 
-void LODPlane::Draw() {
+void LODPlane::Draw(Camera *camera) {
     GL_CHECK(glUseProgram(TileMaterial::shader->GetProgramId()));
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
     glm::mat4 viewMat = camera->GetViewMatrix();
@@ -81,7 +80,7 @@ void LODPlane::Draw() {
     for(int i = 0; i < tiles.size(); i++) {
         glUniform1i(tiles[i][0].material.GetUnifLevel(), i);
         for(int j = 0; j < tiles[i].size(); j++) {
-            if(IsTileInsideCameraView(i, j)) {
+            if(IsTileInsideCameraView(i, j, camera)) {
                 GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
                                      tiles[i][j].GetLocalOffset().x, 
                                      tiles[i][j].GetLocalOffset().y));
@@ -95,7 +94,7 @@ void LODPlane::Draw() {
     GL_CHECK(glBindVertexArray(0));
 }
 
-bool LODPlane::IsTileInsideCameraView(int i, int j) {
+bool LODPlane::IsTileInsideCameraView(int i, int j, Camera *camera) {
     glm::vec2 upperLeftTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize;
     glm::vec2 upperRightTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
                                         + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f);     

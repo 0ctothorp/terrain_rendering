@@ -16,25 +16,21 @@ class LODPlane {
 private:
     GLuint heightmapTex;
     GLuint unifHeightmapOffset;
-
     vector< vector<TileMesh> > tiles;
     int layers;
-    int lodMeshWidth;  
-    Camera *camera;
-    // float heightmapOffsetX = 0;
-    // float heightmapOffsetY = 0;
+    int lodMeshWidth; 
 
     void CalcLayersNumber();
     void CreateTiles();
-    bool IsTileInsideCameraView(int i, int j);
+    bool IsTileInsideCameraView(int i, int j, Camera *camera);
 
 public:
     static const int planeWidth = 1024;
     static constexpr float morphRegion = 0.3f;
     
-    LODPlane(Camera *camera);
+    LODPlane();
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);
-    void Draw();
+    void Draw(Camera *camera);
 };

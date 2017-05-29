@@ -14,6 +14,7 @@
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
 #include "window.hpp"
+#include "framebuffer.hpp"
 
 using namespace std;
 
@@ -131,8 +132,11 @@ int main(int argc, char **argv) {
                                       TileMaterial::fragmentShaderPath};
     TileMaterial::SetStaticUniforms();
     TileMesh::SetTileGeom();
-    LODPlane lodPlane(&camera);
+    
+    LODPlane lodPlane;
     HMParser hmParser("heightmaps/N50E016.hgt");
+    Framebuffer topView;
+
     lodPlane.SetHeightmap(hmParser.GetDataPtr());
 
     double deltaTime = 0;
@@ -159,8 +163,13 @@ int main(int argc, char **argv) {
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
-        lodPlane.Draw();
+        lodPlane.Draw(&camera);
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+
+        topView.Bind();
+        // Draw top view
+        topView.Unbind();
+
         ImGui::Render();
         glfwSwapBuffers(window);
     }
