@@ -5,18 +5,21 @@
 
 class Framebuffer {
 private:
-    const int resolutionWidth = 640;
-    const int resolutionHeight = 480;
     GLuint framebuffer;
     GLuint renderbuffer;
     GLuint colorTexture;
+    int resolutionWidth;
+    int resolutionHeight;
 
     void CreateColorTexture();   
     void CreateRenderBuffer(); 
 
 public:
-    Framebuffer();
+    Framebuffer(int texResWidth, int texResHeight);
     ~Framebuffer();
-    void Bind();
-    void Unbind();
+    void Bind() const;
+    void Unbind() const;
+    GLuint GetColorTexture() const;
+    int GetResWidth() const;
+    int GetResHeight() const;
 };

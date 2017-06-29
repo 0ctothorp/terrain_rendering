@@ -4,7 +4,9 @@
 #include "glDebug.hpp"
 
 
-Framebuffer::Framebuffer() {
+Framebuffer::Framebuffer(int texResWidth, int texResHeight) {
+    resolutionWidth = texResWidth;
+    resolutionHeight = texResHeight;
     GL_CHECK(glGenFramebuffers(1, &framebuffer));
     GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer));
     CreateColorTexture();
@@ -22,10 +24,11 @@ Framebuffer::~Framebuffer() {
 
 void Framebuffer::CreateColorTexture() {
     glGenTextures(1, &colorTexture);
+    GL_CHECK(glActiveTexture(GL_TEXTURE1));
     glBindTexture(GL_TEXTURE_2D, colorTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, resolutionWidth, resolutionHeight, 0, GL_RGB, 
                  GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -44,10 +47,22 @@ void Framebuffer::CreateRenderBuffer() {
                               renderbuffer);
 }
 
-void Framebuffer::Bind() {
+void Framebuffer::Bind() const {
     GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer));
 }
 
-void Framebuffer::Unbind() {
+void Framebuffer::Unbind() const {
     GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
+
+GLuint Framebuffer::GetColorTexture() const {
+    return colorTexture;
+}
+
+int Framebuffer::GetResWidth() const {
+    return resolutionWidth;
+}
+
+int Framebuffer::GetResHeight() const {
+    return resolutionHeight;
 }

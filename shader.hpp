@@ -15,5 +15,6 @@ private:
 public:
     Shader(const string &vertexShaderPath, const string &fragmentShaderPath);
     ~Shader();
-    GLuint GetProgramId() const;
+    void Use() const;
+    GLuint GetUniformLocation(const string &uniform) const;
 };

@@ -5,7 +5,7 @@
 
 #include <GL/glew.h>
 
-#include "camera.hpp"
+#include "mainCamera.hpp"
 #include "edgeMorph.hpp"
 #include "tileMesh.hpp"
 
@@ -22,7 +22,7 @@ private:
 
     void CalcLayersNumber();
     void CreateTiles();
-    bool IsTileInsideCameraView(int i, int j, Camera *camera);
+    bool IsTileInsideCameraView(int i, int j, const MainCamera &camera);
 
 public:
     static const int planeWidth = 1024;
@@ -32,5 +32,6 @@ public:
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);
-    void Draw(Camera *camera);
+    void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr);
+    GLuint GetHeightmapTexture();
 };

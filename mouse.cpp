@@ -3,7 +3,7 @@
 #include "mouse.hpp"
 
 
-Mouse::Mouse(double _x, double _y, Camera *_camera) :
+Mouse::Mouse(double _x, double _y, MainCamera *_camera) :
 lastX(_x),
 lastY(_y), 
 camera(_camera) {}

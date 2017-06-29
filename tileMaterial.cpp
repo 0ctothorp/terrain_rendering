@@ -23,28 +23,23 @@ GLuint TileMaterial::unifViewMat{};
 GLuint TileMaterial::unifProjMat{};
 GLuint TileMaterial::unifGlobOffset{};
 
-
-GLuint TileMaterial::GetUnifLoc(const string var) {
-    return glGetUniformLocation(shader->GetProgramId(), var.c_str());
-}
-
 TileMaterial::TileMaterial(glm::vec2 localOffset, int tileSize, int edgeMorph) {
     if(shader == nullptr) throw "Static field shader not initialized.";
-    GL_CHECK(glUseProgram(shader->GetProgramId()));
-    unifLevel      = GL_CHECK(GetUnifLoc("level"));
-    unifLocOffset  = GL_CHECK(GetUnifLoc("localOffset"));
-    unifEdgeMorph  = GL_CHECK(GetUnifLoc("edgeMorph"));
+    shader->Use();
+    unifLevel      = GL_CHECK(shader->GetUniformLocation("level"));
+    unifLocOffset  = GL_CHECK(shader->GetUniformLocation("localOffset"));
+    unifEdgeMorph  = GL_CHECK(shader->GetUniformLocation("edgeMorph"));
 
-    GL_CHECK(glUniform1i(GetUnifLoc("tileSize"), TileGeometry::GetInstance()->tileSize));
-    GL_CHECK(glUniform1f(GetUnifLoc("morphRegion"), LODPlane::morphRegion));
+    GL_CHECK(glUniform1i(shader->GetUniformLocation("tileSize"), TileGeometry::GetInstance()->tileSize));
+    GL_CHECK(glUniform1f(shader->GetUniformLocation("morphRegion"), LODPlane::morphRegion));
 }
 
 void TileMaterial::SetStaticUniforms() {
     if(shader == nullptr) throw "Static field shader not initialized.";
-    GL_CHECK(glUseProgram(shader->GetProgramId()));
-    unifViewMat = GL_CHECK(GetUnifLoc("viewMat"));
-    unifProjMat = GL_CHECK(GetUnifLoc("projMat"));
-    unifGlobOffset = GL_CHECK(GetUnifLoc("globalOffset"));
+    shader->Use();
+    unifViewMat = GL_CHECK(shader->GetUniformLocation("viewMat"));
+    unifProjMat = GL_CHECK(shader->GetUniformLocation("projMat"));
+    unifGlobOffset = GL_CHECK(shader->GetUniformLocation("globalOffset"));
     GL_CHECK(glUniformMatrix4fv(unifProjMat, 1, GL_FALSE, glm::value_ptr(projectionMatrix)));
-    GL_CHECK(glUniform1i(GetUnifLoc("meshSize"), LODPlane::planeWidth));
+    GL_CHECK(glUniform1i(shader->GetUniformLocation("meshSize"), LODPlane::planeWidth));
 }

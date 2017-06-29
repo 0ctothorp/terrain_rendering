@@ -1,4 +1,4 @@
 #include "window.hpp"
 
-int Window::width = 1024;
-int Window::height = 768;
+int Window::width = 1280;
+int Window::height = 720;
