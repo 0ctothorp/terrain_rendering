@@ -20,9 +20,6 @@
 using namespace std;
 
 
-MainCamera mainCamera(glm::vec3(0, 10, 0));
-Mouse mouse(Window::width / 2, Window::height / 2, &mainCamera);
-
 const int MAX_KEY_CODE = 348;
 bool keys[MAX_KEY_CODE]{false};
 bool cursor = false;
@@ -48,11 +45,11 @@ void GlfwErrorCallback(int error, const char* description) {
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    if(!cursor) mouse.MoveCallback(xpos, ypos);
+    if(!cursor) Mouse::GetInstance()->MoveCallback(xpos, ypos);
 }
 
 void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
-    mouse.ScrollCallback(yoffset);
+    Mouse::GetInstance()->ScrollCallback(yoffset);
 }
 
 GLFWwindow* GetGLFWwindow(const char *name){
@@ -215,15 +212,15 @@ int main(int argc, char **argv) {
             ImGui::ShowTestWindow(&show_test_window);
         }
 
-        mainCamera.Move(keys, deltaTime);
-        glm::vec3 mainCamPos = mainCamera.GetPosition();
+        MainCamera::GetInstance()->Move(keys, deltaTime);
+        glm::vec3 mainCamPos = MainCamera::GetInstance()->GetPosition();
         GL_CHECK(glUniform2f(TileMaterial::GetUnifGlobOffset(), mainCamPos.x, 
                              mainCamPos.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
-        lodPlane.DrawFrom(mainCamera);
+        lodPlane.DrawFrom(*MainCamera::GetInstance());
 
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
@@ -236,7 +233,7 @@ int main(int argc, char **argv) {
         GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
                                     1, GL_FALSE, glm::value_ptr(topViewProjMat)));
         topCam.SetPosition(glm::vec3(mainCamPos.x, topCam.GetPosition().y, mainCamPos.z));
-        lodPlane.DrawFrom(mainCamera, &topCam);
+        lodPlane.DrawFrom(*MainCamera::GetInstance(), &topCam);
         topViewFb.Unbind();
 
         GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
