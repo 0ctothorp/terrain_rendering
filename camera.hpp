@@ -5,7 +5,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "frustum.hpp"
 
 class Camera {
 protected:

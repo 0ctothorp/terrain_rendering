@@ -8,6 +8,7 @@
 #include "window.hpp"
 #include "tileMesh.hpp"
 
+
 class MainCamera : public Camera {
 private:
     float yaw = glm::radians(0.0f);
@@ -141,7 +142,7 @@ public:
     }
 
     // Należy sprawdzić kostkę, a nie tylko prostokąt, bo teren znajduje się na wysokości
-    // większej niż 0 i podcas poruszania kamerą w górę obcinane jest to co nie powinno.
+    // większej niż 0 i podcas poruszania kamerą w górę obcinane jest to, co nie powinno.
     bool IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
                          const glm::vec3 &point4) const {
         const glm::vec3 y100(0, 100, 0);
