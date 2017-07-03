@@ -5,6 +5,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "frustum.hpp"
+
 class Camera {
 protected:
     glm::vec3 position;
@@ -16,7 +18,8 @@ protected:
 public:
     static constexpr float fov = 60.f;
 
-    Camera(glm::vec3 _position) : position(_position) {}
+    Camera(glm::vec3 _position) 
+    : position(_position) {}
 
     virtual glm::mat4 GetViewMatrix() const = 0;
 
@@ -24,7 +27,11 @@ public:
         position = pos;
     }
 
-    glm::vec3 GetPosition() {
+    glm::vec3 GetPosition() const {
         return position;
+    }
+
+    glm::vec3 GetFront() const {
+        return front;
     }
 };

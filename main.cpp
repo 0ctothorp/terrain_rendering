@@ -188,6 +188,13 @@ int main(int argc, char **argv) {
                                                 0.1f, 3000.0f);
 
 
+    int w1, h1;
+    glfwGetWindowSize(window, &w1, &h1);
+    int w2, h2;
+    glfwGetFramebufferSize(window, &w2, &h2);
+    assert(w1 == w2);
+    assert(h1 == h2);
+
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;

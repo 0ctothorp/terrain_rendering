@@ -1,63 +1,113 @@
 #pragma once
 
+#include <array>
+
+#include <glm/gtc/matrix_access.hpp>
+
 #include "camera.hpp"
-
-enum Camera_movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
-};
-
-const GLfloat YAW            =  0.0f;
-const GLfloat PITCH          = -25.0f;
-const GLfloat SPEED          =  1.0f;
-const GLfloat SENSITIVTY     =  0.15f;
-const GLfloat COL_OFFSET     =  0.15f;
+#include "window.hpp"
+#include "tileMesh.hpp"
 
 class MainCamera : public Camera {
 private:
-    float yaw;
-    float pitch;
-    float movementSpeed;
-    float mouseSensitivity;
+    float yaw = glm::radians(0.0f);
+    float pitch = glm::radians(-25.0f);
+    float movementSpeed = 1.0f;
+    float mouseSensitivity = 0.15f;
     glm::vec3 worldFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec2 leftViewLimit;
-    glm::vec2 rightViewLimit;
+
+    class Frustum {
+    private: 
+        std::array<glm::vec4, 6> planes;
+        const glm::mat4x4 *projMat;
+        enum PlaneSide {left = 0, right, top, bottom, near, far};
+
+        int SignedDistToPoint(int plane, const glm::vec3 &point) const {
+            return planes[plane].x * point.x + planes[plane].y * point.y + 
+                   planes[plane].z * point.z + planes[plane].w;
+        }
+
+    public:
+        Frustum(const Camera* camera, const glm::mat4x4* projMat)
+        : projMat(projMat) {
+            ExtractPlanes(camera);
+        }
+
+        void ExtractPlanes(const Camera* camera) {
+            glm::mat4x4 model;
+            glm::translate(model, camera->GetPosition());
+            glm::mat4x4 vpMat = *projMat * camera->GetViewMatrix() * model;
+
+            glm::vec4 row4 = glm::row(vpMat, 3);
+            glm::vec4 row3 = glm::row(vpMat, 2);
+            glm::vec4 row2 = glm::row(vpMat, 1);
+            glm::vec4 row1 = glm::row(vpMat, 0);
+
+            planes[left] = row4 + row1;
+            planes[right] = row4 - row1;
+            planes[bottom] = row4 + row2;
+            planes[top] = row4 - row2;
+            planes[near] = row4 + row3;
+            planes[far] = row4 - row3;
+        }
+
+        // Prostokąt nie znajduje się w widoku jeśli wszystkie jego wierzchołki znajdują się
+        // po złej stronie którejś płaszczyzny ostrosłupa widoku. Nie sprawdzamy przypadków 
+        // brzegowych by nie stracić na wydajności.
+        bool IsInside(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
+                      const glm::vec3 &point4) const {
+            for(int i = 0; i < 6; i++) {
+                if(SignedDistToPoint(i, point1) < 0 && SignedDistToPoint(i, point2) < 0 &&
+                   SignedDistToPoint(i, point3) < 0 && SignedDistToPoint(i, point4) < 0)
+                    return false;
+            }
+            return true;
+        }
+
+        bool IsCubeInside(const std::array<glm::vec3, 8> &points) const {
+            for(int i = 0; i < 6; i++) {
+                int out = 0;
+                for(int j = 0; j < 8; j++) {
+                    if(SignedDistToPoint(i, points[j]) < 0)
+                        out++;
+                }
+                if(out == 8)
+                    return false;
+            }
+            return true;
+        }
+    } frustum;
 
     void updateCameraVectors() {
-        glm::vec3 _front;
         float radPitch = glm::radians(pitch);
         float cosPitch = cos(radPitch);
         float radYaw = glm::radians(yaw);
-        _front.x = sin(radYaw) * cosPitch;
-        _front.y = sin(radPitch);
-        _front.z = -cos(radYaw) * cosPitch;
+        glm::vec3 _front(sin(radYaw) * cosPitch, sin(radPitch), -cos(radYaw) * cosPitch);
         front = glm::normalize(_front);
         // Normalize the vectors, because their length gets closer to 0
         // the more you look up or down which results in slower movement.
         right = glm::normalize(glm::cross(front, worldUp));
         up    = glm::normalize(glm::cross(right, front));
-        
-        leftViewLimit = glm::rotate(glm::normalize(glm::vec2(front.x, front.z)), 
-                                    glm::radians(-fov / 2.f));
-        rightViewLimit = glm::rotate(glm::normalize(glm::vec2(front.x, front.z)), 
-                                     glm::radians(fov / 2.f));
     }
 
 public:
-    static constexpr float fov = 60.f;
+    const float fov = 60.f;
+    const float near = 0.01f;
+    const float far = 2000.0f;
+    const glm::mat4x4 projectionMat = glm::perspective(
+        glm::radians(fov), 
+        (float)Window::width / (float)Window::height,
+        near,
+        far
+    );
 
     MainCamera(glm::vec3 position)
     : Camera(position)
-    , movementSpeed(SPEED)
-    , mouseSensitivity(SENSITIVTY) {
+    , frustum(this, &projectionMat) {
         worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
         front = glm::vec3(0.0f, 0.0f, -1.0f);
         right = glm::normalize(glm::cross(front, worldUp));
         up    = glm::normalize(glm::cross(right, front));
-        leftViewLimit = glm::rotate(glm::vec2(front.x, front.z), glm::radians(-fov / 2.f));
-        rightViewLimit = glm::rotate(glm::vec2(front.x, front.z), glm::radians(fov / 2.f));
     }
 
     virtual glm::mat4 GetViewMatrix() const override {
@@ -74,6 +124,9 @@ public:
         else if(keys[GLFW_KEY_D]) position += right * velocity;
         if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
         if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
+
+        updateCameraVectors();
+        frustum.ExtractPlanes(this);
     }
 
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset) {
@@ -88,6 +141,7 @@ public:
         if(pitch < -89.0f) pitch = -89.0f;
 
         updateCameraVectors();
+        frustum.ExtractPlanes(this);
     }
 
     void setPosition(glm::vec3 pos) {
@@ -99,11 +153,17 @@ public:
             movementSpeed += change;
     }
 
-    glm::vec2 GetLeftViewLimit() const {
-        return leftViewLimit;
-    }
-
-    glm::vec2 GetRightViewLimit() const {
-        return rightViewLimit;
+    // Należy sprawdzić kostkę, a nie tylko prostokąt, bo teren znajduje się na wysokości
+    // większej niż 0 i podcas poruszania kamerą w górę obcinane jest to co nie powinno.
+    bool IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
+                         const glm::vec3 &point4) const {
+        const glm::vec3 y100(0, 100, 0);
+        const glm::vec3 point12 = point1 + y100;
+        const glm::vec3 point22 = point2 + y100;
+        const glm::vec3 point32 = point3 + y100;
+        const glm::vec3 point42 = point4 + y100;
+        std::array<glm::vec3, 8> points{point1, point2, point3, point4,
+                                        point12, point22, point32, point42};
+        return frustum.IsCubeInside(points);
     }
 };

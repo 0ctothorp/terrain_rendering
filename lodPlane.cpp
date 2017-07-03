@@ -80,7 +80,7 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
     for(int i = 0; i < tiles.size(); i++) {
         glUniform1i(tiles[i][0].material.GetUnifLevel(), i);
         for(int j = 0; j < tiles[i].size(); j++) {
-            if(IsTileInsideCameraView(i, j, camera)) {
+            if(IsTileInsideFrustum(i, j, camera)) {
                 GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
                                      tiles[i][j].GetLocalOffset().x, 
                                      tiles[i][j].GetLocalOffset().y));
@@ -98,35 +98,61 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
 // ograniczającym widok z lewej oraz wektorem prowadzącym do punktu kafelka(w sumie do 4), 
 // a następnie wyliczam kąt między wektorem ograniczającym widok z prawej, a wektorem 
 // do punktu kafelka. Razem te kąty mają dać fov.
-bool LODPlane::IsTileInsideCameraView(int i, int j, const MainCamera &camera) {
-    glm::vec2 upperLeftTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize;
-    glm::vec2 upperRightTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
-                                        + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f);     
-    glm::vec2 lowerRightTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
-                                        + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
-                                                    (float)TileGeometry::tileSize * pow(2, i));
-    glm::vec2 lowerLeftTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
-                                       + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)); 
-    glm::vec2 tilePointingVector = glm::normalize(upperLeftTileCornerPos);
-    glm::vec2 tilePointingVector2 = glm::normalize(upperRightTileCornerPos);
-    glm::vec2 tilePointingVector3 = glm::normalize(lowerRightTileCornerPos);
-    glm::vec2 tilePointingVector4 = glm::normalize(lowerLeftTileCornerPos);
-    float leftAngle = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector));
-    float rightAngle = acos(glm::dot(tilePointingVector, camera.GetRightViewLimit()));
-    float leftAngle2 = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector2));
-    float rightAngle2 = acos(glm::dot(tilePointingVector2, camera.GetRightViewLimit()));
-    float leftAngle3 = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector3));
-    float rightAngle3 = acos(glm::dot(tilePointingVector3, camera.GetRightViewLimit()));
-    float leftAngle4 = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector4));
-    float rightAngle4 = acos(glm::dot(tilePointingVector4, camera.GetRightViewLimit()));
-    return (leftAngle + rightAngle > glm::radians(Camera::fov - 1) && leftAngle + 
-            rightAngle < glm::radians(Camera::fov + 1)) ||
-           (leftAngle2 + rightAngle2 > glm::radians(Camera::fov - 1) && leftAngle2 + 
-            rightAngle2 < glm::radians(Camera::fov + 1)) ||
-           (leftAngle3 + rightAngle3 > glm::radians(Camera::fov - 1) && leftAngle3 + 
-            rightAngle3 < glm::radians(Camera::fov + 1)) || 
-           (leftAngle4 + rightAngle4 > glm::radians(Camera::fov - 1) && leftAngle4 + 
-            rightAngle4 < glm::radians(Camera::fov + 1));
+// bool LODPlane::IsTileInsideCameraView(int i, int j, const MainCamera &camera) {
+//     glm::vec2 upperLeftTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize;
+//     glm::vec2 upperRightTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
+//                                         + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f);     
+//     glm::vec2 lowerRightTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
+//                                         + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
+//                                                     (float)TileGeometry::tileSize * pow(2, i));
+//     glm::vec2 lowerLeftTileCornerPos = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
+//                                        + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)); 
+//     glm::vec2 tilePointingVector = glm::normalize(upperLeftTileCornerPos);
+//     glm::vec2 tilePointingVector2 = glm::normalize(upperRightTileCornerPos);
+//     glm::vec2 tilePointingVector3 = glm::normalize(lowerRightTileCornerPos);
+//     glm::vec2 tilePointingVector4 = glm::normalize(lowerLeftTileCornerPos);
+//     float leftAngle = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector));
+//     float rightAngle = acos(glm::dot(tilePointingVector, camera.GetRightViewLimit()));
+//     float leftAngle2 = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector2));
+//     float rightAngle2 = acos(glm::dot(tilePointingVector2, camera.GetRightViewLimit()));
+//     float leftAngle3 = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector3));
+//     float rightAngle3 = acos(glm::dot(tilePointingVector3, camera.GetRightViewLimit()));
+//     float leftAngle4 = acos(glm::dot(camera.GetLeftViewLimit(), tilePointingVector4));
+//     float rightAngle4 = acos(glm::dot(tilePointingVector4, camera.GetRightViewLimit()));
+//     return (leftAngle + rightAngle > glm::radians(Camera::fov - 1) && leftAngle + 
+//             rightAngle < glm::radians(Camera::fov + 1)) ||
+//            (leftAngle2 + rightAngle2 > glm::radians(Camera::fov - 1) && leftAngle2 + 
+//             rightAngle2 < glm::radians(Camera::fov + 1)) ||
+//            (leftAngle3 + rightAngle3 > glm::radians(Camera::fov - 1) && leftAngle3 + 
+//             rightAngle3 < glm::radians(Camera::fov + 1)) || 
+//            (leftAngle4 + rightAngle4 > glm::radians(Camera::fov - 1) && leftAngle4 + 
+//             rightAngle4 < glm::radians(Camera::fov + 1));
+// }
+
+
+
+bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) {
+    glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
+                          TileMesh::globalOffset;
+    glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
+                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f);     
+    glm::vec2 lowerRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
+                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
+                                       (float)TileGeometry::tileSize * pow(2, i));
+    glm::vec2 lowerLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
+                          + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)); 
+
+    // const int realTileSize = TileGeometry::tileSize * pow(2, i);
+    // const float sphereRadius = realTileSize / 2.0f;
+    // const glm::vec3 center = glm::vec3(upperLeft.x - sphereRadius, 0.0f, upperLeft.y - sphereRadius);
+    // return mainCam.IsInsideFrustum(center, sphereRadius);
+
+    glm::vec3 upLeft = glm::vec3(upperLeft.x, 0.0f, upperLeft.y);
+    glm::vec3 upRight = glm::vec3(upperRight.x, 0.0f, upperRight.y);
+    glm::vec3 loRight = glm::vec3(lowerRight.x, 0.0f, lowerRight.y);
+    glm::vec3 loLeft = glm::vec3(lowerLeft.x, 0.0f, lowerLeft.y);
+
+    return mainCam.IsInsideFrustum(upLeft, upRight, loRight, loLeft);
 }
 
 void LODPlane::SetHeightmap(vector<short>* hmData) {

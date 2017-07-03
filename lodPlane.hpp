@@ -23,6 +23,7 @@ private:
     void CalcLayersNumber();
     void CreateTiles();
     bool IsTileInsideCameraView(int i, int j, const MainCamera &camera);
+    bool IsTileInsideFrustum(int i, int j, const MainCamera &mainCam);
 
 public:
     static const int planeWidth = 1024;
