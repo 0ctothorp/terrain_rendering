@@ -51,19 +51,6 @@ private:
             planes[far] = row4 - row3;
         }
 
-        // Prostokąt nie znajduje się w widoku jeśli wszystkie jego wierzchołki znajdują się
-        // po złej stronie którejś płaszczyzny ostrosłupa widoku. Nie sprawdzamy przypadków 
-        // brzegowych by nie stracić na wydajności.
-        bool IsInside(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
-                      const glm::vec3 &point4) const {
-            for(int i = 0; i < 6; i++) {
-                if(SignedDistToPoint(i, point1) < 0 && SignedDistToPoint(i, point2) < 0 &&
-                   SignedDistToPoint(i, point3) < 0 && SignedDistToPoint(i, point4) < 0)
-                    return false;
-            }
-            return true;
-        }
-
         bool IsCubeInside(const std::array<glm::vec3, 8> &points) const {
             for(int i = 0; i < 6; i++) {
                 int out = 0;
