@@ -18,6 +18,6 @@ public:
 
     static void SetTileGeom();
     TileMesh(glm::vec2 localOffset, int edgeMorph = EdgeMorph::NONE);
-    glm::vec2 GetLocalOffset();
-    int GetEdgeMorph();
+    glm::vec2 GetLocalOffset() const;
+    int GetEdgeMorph() const;
 };

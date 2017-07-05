@@ -1,5 +1,3 @@
-#pragma once
-
 #include "mainCamera.hpp"
 #include "mouse.hpp"
 
@@ -18,7 +16,8 @@ MainCamera::Frustum::Frustum(const Camera* camera, const glm::mat4x4* projMat)
 
 void MainCamera::Frustum::ExtractPlanes(const Camera* camera) {
     glm::mat4x4 model;
-    glm::translate(model, camera->GetPosition());
+    glm::vec3 camPos = camera->GetPosition();
+    glm::translate(model, camPos);
     glm::mat4x4 vpMat = *projMat * camera->GetViewMatrix() * model;
 
     glm::vec4 row4 = glm::row(vpMat, 3);
@@ -66,17 +65,8 @@ void MainCamera::updateCameraVectors() {
     // the more you look up or down which results in slower movement.
     right = glm::normalize(glm::cross(front, worldUp));
     up    = glm::normalize(glm::cross(right, front));
+    frustum.ExtractPlanes(this);
 }
-
-const float fov = 60.f;
-const float near = 0.01f;
-const float far = 2000.0f;
-const glm::mat4x4 projectionMat = glm::perspective(
-    glm::radians(fov), 
-    (float)Window::width / (float)Window::height,
-    near,
-    far
-);
 
 glm::mat4 MainCamera::GetViewMatrix() const {
     return glm::lookAt(position, position + front, up);
@@ -92,9 +82,6 @@ void MainCamera::Move(bool *keys, double deltaTime) {
     else if(keys[GLFW_KEY_D]) position += right * velocity;
     if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
     if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
-
-    updateCameraVectors();
-    frustum.ExtractPlanes(this);
 }
 
 void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset) {
@@ -110,7 +97,6 @@ void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset) {
     if(pitch < -89.0f) pitch = -89.0f;
 
     updateCameraVectors();
-    frustum.ExtractPlanes(this);
 }
 
 void MainCamera::ChangeMovementSpeed(int change) {

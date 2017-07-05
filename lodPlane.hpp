@@ -23,7 +23,7 @@ private:
     void CalcLayersNumber();
     void CreateTiles();
     bool IsTileInsideCameraView(int i, int j, const MainCamera &camera);
-    bool IsTileInsideFrustum(int i, int j, const MainCamera &mainCam);
+    bool IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const;
 
 public:
     static const int planeWidth = 1024;
@@ -33,6 +33,6 @@ public:
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);
-    void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr);
-    GLuint GetHeightmapTexture();
+    void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;
+    GLuint GetHeightmapTexture() const;
 };

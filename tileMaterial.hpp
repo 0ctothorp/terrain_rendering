@@ -33,7 +33,7 @@ public:
     static GLuint GetUnifViewMat() { return unifViewMat; }
     static GLuint GetUnifProjMat() { return unifProjMat; }
     static GLuint GetUnifGlobOffset() { return unifGlobOffset; }
-    GLuint GetUnifLevel()      { return unifLevel; }
-    GLuint GetUnifLocOffset()  { return unifLocOffset; }
-    GLuint GetUnifEdgeMorph()  { return unifEdgeMorph; }
+    GLuint GetUnifLevel() const     { return unifLevel; }
+    GLuint GetUnifLocOffset() const { return unifLocOffset; }
+    GLuint GetUnifEdgeMorph() const { return unifEdgeMorph; }
 };

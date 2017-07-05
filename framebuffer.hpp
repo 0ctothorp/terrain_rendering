@@ -4,7 +4,7 @@
 
 
 class Framebuffer {
-private:
+protected:
     GLuint framebuffer;
     GLuint renderbuffer;
     GLuint colorTexture;

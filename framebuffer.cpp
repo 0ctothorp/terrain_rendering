@@ -11,9 +11,10 @@ Framebuffer::Framebuffer(int texResWidth, int texResHeight) {
     GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer));
     CreateColorTexture();
     CreateRenderBuffer();
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    GLint status = GL_CHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    if(status != GL_FRAMEBUFFER_COMPLETE)
         std::cerr << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }
 
 Framebuffer::~Framebuffer() {
@@ -23,28 +24,27 @@ Framebuffer::~Framebuffer() {
 }
 
 void Framebuffer::CreateColorTexture() {
-    glGenTextures(1, &colorTexture);
+    GL_CHECK(glGenTextures(1, &colorTexture));
     GL_CHECK(glActiveTexture(GL_TEXTURE1));
-    glBindTexture(GL_TEXTURE_2D, colorTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, resolutionWidth, resolutionHeight, 0, GL_RGB, 
-                 GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, colorTexture));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, resolutionWidth, resolutionHeight, 0, GL_RGB, 
+                          GL_UNSIGNED_BYTE, nullptr));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 
-                           colorTexture, 0);  
+    GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 
+                                    colorTexture, 0));  
 }
 
 void Framebuffer::CreateRenderBuffer() {
-    glGenRenderbuffers(1, &renderbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer); 
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, resolutionWidth, 
-                          resolutionHeight);  
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 
-                              renderbuffer);
+    GL_CHECK(glGenRenderbuffers(1, &renderbuffer));
+    GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer)); 
+    GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, resolutionWidth, 
+                                   resolutionHeight));  
+    GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, 0));
+    GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 
+                                       renderbuffer));
 }
 
 void Framebuffer::Bind() const {
