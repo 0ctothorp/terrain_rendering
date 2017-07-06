@@ -9,16 +9,14 @@
 #include "tileMesh.hpp"
 
 
-LODPlane::LODPlane(Camera *_camera) 
-: camera(_camera) {
+LODPlane::LODPlane() {
     CalcLayersNumber();
     CreateTiles();
+    glm::vec2 globalOffset = TileMesh::GetGlobalOffset();
     GL_CHECK(glUniform2f(
-        TileMaterial::GetUnifGlobOffset(), TileMesh::globalOffset.x, TileMesh::globalOffset.y
+        TileMaterial::shader->GetUniformLocation("globalOffset"), globalOffset.x, globalOffset.y
     ));
-    unifHeightmapOffset = GL_CHECK(
-        glGetUniformLocation(TileMaterial::shader->GetProgramId(), "heightmapOffset")
-    );
+    unifHeightmapOffset = TileMaterial::shader->GetUniformLocation("heightmapOffset");
 }
 
 LODPlane::~LODPlane() {
@@ -70,10 +68,12 @@ void LODPlane::CreateTiles() {
     }
 }
 
-void LODPlane::Draw() {
-    GL_CHECK(glUseProgram(TileMaterial::shader->GetProgramId()));
+void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
+    TileMaterial::shader->Use();
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
-    glm::mat4 viewMat = camera->GetViewMatrix();
+    glm::mat4 viewMat;
+    if(additionalCam) viewMat = additionalCam->GetViewMatrix();
+    else viewMat = camera.GetViewMatrix();
     GL_CHECK(glUniformMatrix4fv(TileMaterial::GetUnifViewMat(), 1, GL_FALSE, 
                                 glm::value_ptr(viewMat)));
     int indicesSize = TileGeometry::GetInstance()->GetIndicesSize();
@@ -81,22 +81,47 @@ void LODPlane::Draw() {
     for(int i = 0; i < tiles.size(); i++) {
         glUniform1i(tiles[i][0].material.GetUnifLevel(), i);
         for(int j = 0; j < tiles[i].size(); j++) {
-            GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
-                                 tiles[i][j].GetLocalOffset().x, tiles[i][j].GetLocalOffset().y));
-            GL_CHECK(glUniform1i(tiles[i][j].material.GetUnifEdgeMorph(), 
-                                 tiles[i][j].GetEdgeMorph()));
-            GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, indicesSize, GL_UNSIGNED_INT, 
-                                    TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+            if(IsTileInsideFrustum(i, j, camera)) {
+                GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
+                                     tiles[i][j].GetLocalOffset().x, 
+                                     tiles[i][j].GetLocalOffset().y));
+                GL_CHECK(glUniform1i(tiles[i][j].material.GetUnifEdgeMorph(), 
+                                     tiles[i][j].GetEdgeMorph()));
+                GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, indicesSize, GL_UNSIGNED_INT, 
+                                        TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+            } 
         }
     }
     GL_CHECK(glBindVertexArray(0));
 }
 
+bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const {
+    glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
+                          TileMesh::GetGlobalOffset();
+    glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
+                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f)
+                           + TileMesh::GetGlobalOffset();     
+    glm::vec2 lowerRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
+                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
+                                       (float)TileGeometry::tileSize * pow(2, i)) 
+                           + TileMesh::GetGlobalOffset();
+    glm::vec2 lowerLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
+                          + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i))
+                          + TileMesh::GetGlobalOffset(); 
+
+    glm::vec3 upLeft = glm::vec3(upperLeft.x, 0.0f, upperLeft.y);
+    glm::vec3 upRight = glm::vec3(upperRight.x, 0.0f, upperRight.y);
+    glm::vec3 loRight = glm::vec3(lowerRight.x, 0.0f, lowerRight.y);
+    glm::vec3 loLeft = glm::vec3(lowerLeft.x, 0.0f, lowerLeft.y);
+
+    return mainCam.IsInsideFrustum(upLeft, upRight, loRight, loLeft);
+}
+
 void LODPlane::SetHeightmap(vector<short>* hmData) {
     Shader* shader = TileMaterial::shader;
     if(!shader) throw "Static field shader not initialized.";
-    GL_CHECK(glUseProgram(shader->GetProgramId()));
-    GL_CHECK(glUniform1i(glGetUniformLocation(shader->GetProgramId(), "heightmap"), 0));
+    shader->Use();
+    GL_CHECK(glUniform1i(shader->GetUniformLocation("heightmap"), 0));
 
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));
@@ -109,4 +134,8 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
                           hmData->data()));
+}
+
+GLuint LODPlane::GetHeightmapTexture() const {
+    return heightmapTex;
 }

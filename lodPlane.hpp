@@ -5,7 +5,7 @@
 
 #include <GL/glew.h>
 
-#include "camera.hpp"
+#include "mainCamera.hpp"
 #include "edgeMorph.hpp"
 #include "tileMesh.hpp"
 
@@ -16,24 +16,23 @@ class LODPlane {
 private:
     GLuint heightmapTex;
     GLuint unifHeightmapOffset;
-
     vector< vector<TileMesh> > tiles;
     int layers;
-    int lodMeshWidth;  
-    Camera *camera;
-    float heightmapOffsetX = 0;
-    float heightmapOffsetY = 0;
+    int lodMeshWidth; 
 
     void CalcLayersNumber();
     void CreateTiles();
+    bool IsTileInsideCameraView(int i, int j, const MainCamera &camera);
+    bool IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const;
 
 public:
     static const int planeWidth = 1024;
     static constexpr float morphRegion = 0.3f;
     
-    LODPlane(Camera *camera);
+    LODPlane();
     ~LODPlane();
 
     void SetHeightmap(vector<short>*);
-    void Draw();
+    void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;
+    GLuint GetHeightmapTexture() const;
 };

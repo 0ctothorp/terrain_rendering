@@ -82,7 +82,6 @@ TileGeometry::TileGeometry() {
     CreateTileVertices();
     CreateTileIndices();
     SetBuffers();
-    instance = this;
 }
 
 TileGeometry::~TileGeometry() {

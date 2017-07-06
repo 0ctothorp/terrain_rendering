@@ -8,18 +8,18 @@
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
 
-#include "camera.hpp"
+#include "mainCamera.hpp"
+#include "topCamera.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
 #include "window.hpp"
+#include "topViewFb.hpp"
+#include "drawable.hpp"
 
 using namespace std;
 
-
-Camera camera(glm::vec3(0, 10, 0));
-Mouse mouse(Window::width / 2, Window::height / 2, &camera);
 
 const int MAX_KEY_CODE = 348;
 bool keys[MAX_KEY_CODE]{false};
@@ -46,11 +46,11 @@ void GlfwErrorCallback(int error, const char* description) {
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    if(!cursor) mouse.MoveCallback(xpos, ypos);
+    if(!cursor) Mouse::GetInstance()->MoveCallback(xpos, ypos);
 }
 
 void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
-    mouse.ScrollCallback(yoffset);
+    Mouse::GetInstance()->ScrollCallback(yoffset);
 }
 
 GLFWwindow* GetGLFWwindow(const char *name){
@@ -131,15 +131,26 @@ int main(int argc, char **argv) {
                                       TileMaterial::fragmentShaderPath};
     TileMaterial::SetStaticUniforms();
     TileMesh::SetTileGeom();
-    LODPlane lodPlane(&camera);
+    
+    LODPlane lodPlane;
     HMParser hmParser("heightmaps/N50E016.hgt");
     lodPlane.SetHeightmap(hmParser.GetDataPtr());
+
+    MainCamera* mainCam = MainCamera::GetInstance();
+    TopCamera topCam(1000.0f);
+    TopViewFb topViewFb(1280, 720);
+    TopViewScreenQuad topViewQuad("shaders/framebufferVertexShader.glsl", 
+                                  "shaders/framebufferFragmentShader.glsl",
+                                  &topViewFb);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
     bool show_test_window = true;
     while(glfwWindowShouldClose(window) == 0) {    
+        TileMaterial::shader->Use();
+        glActiveTexture(GL_TEXTURE0);
+
         double time = glfwGetTime();
         deltaTime = time - prevFrameTime;
         countFrames(frames, time, prevFrameTime);
@@ -152,15 +163,26 @@ int main(int argc, char **argv) {
             ImGui::ShowTestWindow(&show_test_window);
         }
 
-        camera.Move(keys, deltaTime);
-        GL_CHECK(glUniform2f(TileMaterial::GetUnifGlobOffset(), camera.position.x, 
-                             camera.position.z));
+        mainCam->Move(keys, deltaTime);
+        glm::vec3 mainCamPos = mainCam->GetPosition();
+        TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
+        GL_CHECK(glUniform2f(TileMaterial::shader->GetUniformLocation("globalOffset"), 
+                             mainCamPos.x, mainCamPos.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
-        lodPlane.Draw();
+        GL_CHECK(glEnable(GL_DEPTH_TEST));
+        lodPlane.DrawFrom(*mainCam);
+
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+
+        topViewFb.Draw(lodPlane, topCam);
+
+        // GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
+        //                             1, GL_FALSE, glm::value_ptr(TileMaterial::projectionMatrix)));
+
+        topViewQuad.Draw();
+
         ImGui::Render();
         glfwSwapBuffers(window);
     }

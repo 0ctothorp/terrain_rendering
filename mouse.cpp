@@ -1,12 +1,17 @@
 #include <iostream>
 
+#include "window.hpp"
+#include "mainCamera.hpp"
 #include "mouse.hpp"
 
 
-Mouse::Mouse(double _x, double _y, Camera *_camera) :
-lastX(_x),
-lastY(_y), 
-camera(_camera) {}
+Mouse* Mouse::instance = nullptr;
+
+Mouse::Mouse(double _x, double _y) : lastX(_x), lastY(_y) {}
+
+Mouse::~Mouse() {
+    delete instance;
+}
 
 void Mouse::MoveCallback(double xpos, double ypos) {
     if(firstTime) {
@@ -14,11 +19,17 @@ void Mouse::MoveCallback(double xpos, double ypos) {
         lastY = ypos;    
         firstTime = false;
     }
-    camera->ProcessMouseMovement(xpos - lastX, ypos - lastY);
+    MainCamera::GetInstance()->ProcessMouseMovement(xpos - lastX, ypos - lastY);
     lastX = xpos;
     lastY = ypos;
 }
 
 void Mouse::ScrollCallback(double yoffset) {
-    camera->ChangeMovementSpeed(yoffset);
+    MainCamera::GetInstance()->ChangeMovementSpeed(yoffset);
+}
+
+Mouse* Mouse::GetInstance() {
+    if(instance == nullptr)
+        instance = new Mouse(Window::width / 2.0f, Window::height / 2.0f);
+    return instance;
 }

@@ -14,7 +14,6 @@ using namespace std;
 
 class TileMaterial {
 private:
-    static const glm::mat4 projectionMatrix;
     static GLuint unifViewMat;
     static GLuint unifProjMat;
     static GLuint unifGlobOffset;
@@ -23,6 +22,7 @@ private:
     GLuint unifEdgeMorph;
 
 public:
+    static const glm::mat4 projectionMatrix;
     static const string vertexShaderPath;
     static const string fragmentShaderPath;
     static Shader* shader;
@@ -32,9 +32,8 @@ public:
     static void SetStaticUniforms();
     static GLuint GetUnifViewMat() { return unifViewMat; }
     static GLuint GetUnifProjMat() { return unifProjMat; }
-    static GLuint GetUnifLoc(const string var);
     static GLuint GetUnifGlobOffset() { return unifGlobOffset; }
-    GLuint GetUnifLevel()      { return unifLevel; }
-    GLuint GetUnifLocOffset()  { return unifLocOffset; }
-    GLuint GetUnifEdgeMorph()  { return unifEdgeMorph; }
+    GLuint GetUnifLevel() const     { return unifLevel; }
+    GLuint GetUnifLocOffset() const { return unifLocOffset; }
+    GLuint GetUnifEdgeMorph() const { return unifEdgeMorph; }
 };

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "shader.hpp"
+#include "glDebug.hpp"
 
 Shader::Shader(const string &vertexShaderPath, const string &fragmentShaderPath) {
     string vertexShaderCode = LoadShaderFile(vertexShaderPath);
@@ -46,41 +47,45 @@ void Shader::CompileShader(GLuint vertexShader, GLuint fragmentShader) {
     GLint result = GL_FALSE;
     int infoLogLength;
 
-    glCompileShader(vertexShader);
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &result);
-    glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+    GL_CHECK(glCompileShader(vertexShader));
+    GL_CHECK(glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &result));
+    GL_CHECK(glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &infoLogLength));
     if(infoLogLength > 0 && !result) {
         vector<char> vertexShaderErrorMessage(infoLogLength + 1);
-        glGetShaderInfoLog(vertexShader, infoLogLength, nullptr, &vertexShaderErrorMessage[0]);
+        GL_CHECK(glGetShaderInfoLog(vertexShader, infoLogLength, nullptr, &vertexShaderErrorMessage[0]));
         cerr << "[VERTEX SHADER COMPILATION ERROR] " << &vertexShaderErrorMessage[0] << '\n';
         exit(1);
     } else result = GL_FALSE;
 
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result);
-    glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+    GL_CHECK(glCompileShader(fragmentShader));
+    GL_CHECK(glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result));
+    GL_CHECK(glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLength));
     if(infoLogLength > 0 && !result) {
         vector<char> fragmentShaderErrorMessage(infoLogLength + 1);
-        glGetShaderInfoLog(fragmentShader, infoLogLength, nullptr, &fragmentShaderErrorMessage[0]);
+        GL_CHECK(glGetShaderInfoLog(fragmentShader, infoLogLength, nullptr, &fragmentShaderErrorMessage[0]));
         cerr << "[FRAGMENT SHADER COMPILATION ERROR] " << &fragmentShaderErrorMessage[0] << '\n';
         exit(1);
     } else result = GL_FALSE;
 
     programId = glCreateProgram();
-    glAttachShader(programId, vertexShader);
-    glAttachShader(programId, fragmentShader);
+    GL_CHECK(glAttachShader(programId, vertexShader));
+    GL_CHECK(glAttachShader(programId, fragmentShader));
     
-    glLinkProgram(programId);
-    glGetProgramiv(programId, GL_LINK_STATUS, &result);
-    glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLogLength);
+    GL_CHECK(glLinkProgram(programId));
+    GL_CHECK(glGetProgramiv(programId, GL_LINK_STATUS, &result));
+    GL_CHECK(glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLogLength));
     if(infoLogLength > 0 && !result) {
         vector<char> errorMessage(infoLogLength + 1);
-        glGetProgramInfoLog(programId, infoLogLength, nullptr, &errorMessage[0]);
+        GL_CHECK(glGetProgramInfoLog(programId, infoLogLength, nullptr, &errorMessage[0]));
         cout << "[SHADER LINKING ERROR] " << &errorMessage[0] << '\n';
         exit(1);
     }
 }
 
-GLuint Shader::GetProgramId() const {
-    return programId;
+void Shader::Use() const {
+    GL_CHECK(glUseProgram(programId));
+}
+
+GLuint Shader::GetUniformLocation(const string &uniform) const {
+    return GL_CHECK(glGetUniformLocation(programId, uniform.c_str()));
 }
