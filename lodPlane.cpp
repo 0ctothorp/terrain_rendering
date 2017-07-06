@@ -12,8 +12,9 @@
 LODPlane::LODPlane() {
     CalcLayersNumber();
     CreateTiles();
+    glm::vec2 globalOffset = TileMesh::GetGlobalOffset();
     GL_CHECK(glUniform2f(
-        TileMaterial::GetUnifGlobOffset(), TileMesh::globalOffset.x, TileMesh::globalOffset.y
+        TileMaterial::shader->GetUniformLocation("globalOffset"), globalOffset.x, globalOffset.y
     ));
     unifHeightmapOffset = TileMaterial::shader->GetUniformLocation("heightmapOffset");
 }
@@ -96,14 +97,17 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
 
 bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const {
     glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
-                          TileMesh::globalOffset;
+                          TileMesh::GetGlobalOffset();
     glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
-                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f);     
+                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f)
+                           + TileMesh::GetGlobalOffset();     
     glm::vec2 lowerRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
                            + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
-                                       (float)TileGeometry::tileSize * pow(2, i));
+                                       (float)TileGeometry::tileSize * pow(2, i)) 
+                           + TileMesh::GetGlobalOffset();
     glm::vec2 lowerLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
-                          + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)); 
+                          + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i))
+                          + TileMesh::GetGlobalOffset(); 
 
     glm::vec3 upLeft = glm::vec3(upperLeft.x, 0.0f, upperLeft.y);
     glm::vec3 upRight = glm::vec3(upperRight.x, 0.0f, upperRight.y);

@@ -16,3 +16,11 @@ void TileMesh::SetTileGeom() {
 }
 
 int TileMesh::GetEdgeMorph() const { return edgeMorph; }
+
+void TileMesh::SetGlobalOffset(float x, float y) {
+    globalOffset = glm::vec2(x, y);
+}
+
+glm::vec2 TileMesh::GetGlobalOffset() {
+    return globalOffset;
+}

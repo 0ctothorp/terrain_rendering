@@ -10,6 +10,6 @@ private:
     glm::mat4 topViewProjMat;
 
 public:
-    TopViewFb();
+    TopViewFb(int resWidth, int resHeight);
     void Draw(const LODPlane &lodPlane, TopCamera &topCam) const;
 };

@@ -3,7 +3,7 @@
 #include "mainCamera.hpp"
 
 
-TopViewFb::TopViewFb() : Framebuffer(1280, 720) {
+TopViewFb::TopViewFb(int resWidth, int resHeight) : Framebuffer(resWidth, resHeight) {
     topViewProjMat = glm::perspective(glm::radians(60.0f), 
                                       (float)GetResWidth() / 
                                       (float)GetResHeight(), 

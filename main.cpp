@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 
     MainCamera* mainCam = MainCamera::GetInstance();
     TopCamera topCam(1000.0f);
-    TopViewFb topViewFb;
+    TopViewFb topViewFb(1280, 720);
     TopViewScreenQuad topViewQuad("shaders/framebufferVertexShader.glsl", 
                                   "shaders/framebufferFragmentShader.glsl",
                                   &topViewFb);
@@ -165,8 +165,9 @@ int main(int argc, char **argv) {
 
         mainCam->Move(keys, deltaTime);
         glm::vec3 mainCamPos = mainCam->GetPosition();
-        GL_CHECK(glUniform2f(TileMaterial::GetUnifGlobOffset(), mainCamPos.x, 
-                             mainCamPos.z));
+        TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
+        GL_CHECK(glUniform2f(TileMaterial::shader->GetUniformLocation("globalOffset"), 
+                             mainCamPos.x, mainCamPos.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
@@ -177,8 +178,8 @@ int main(int argc, char **argv) {
 
         topViewFb.Draw(lodPlane, topCam);
 
-        GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
-                                    1, GL_FALSE, glm::value_ptr(TileMaterial::projectionMatrix)));
+        // GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
+        //                             1, GL_FALSE, glm::value_ptr(TileMaterial::projectionMatrix)));
 
         topViewQuad.Draw();
 
