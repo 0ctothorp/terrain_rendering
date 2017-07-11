@@ -53,6 +53,8 @@ MainCamera::MainCamera(glm::vec3 position)
     front = glm::vec3(0.0f, 0.0f, -1.0f);
     right = glm::normalize(glm::cross(front, worldUp));
     up    = glm::normalize(glm::cross(right, front));
+    frustum.ExtractPlanes(this);
+    
 }
 
 void MainCamera::updateCameraVectors() {
