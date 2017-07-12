@@ -123,10 +123,6 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
     frames++;
 }
 
-// GLfloat* GetTopViewQuadOfSize(float screenWidthFraction) {
-
-// }
-
 int main(int argc, char **argv) {
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     ImGui_ImplGlfwGL3_Init(window, false);
