@@ -12,9 +12,8 @@
 LODPlane::LODPlane() {
     CalcLayersNumber();
     CreateTiles();
-    glm::vec2 globalOffset = TileMesh::GetGlobalOffset();
     GL_CHECK(glUniform2f(
-        TileMaterial::shader->GetUniformLocation("globalOffset"), globalOffset.x, globalOffset.y
+        TileMaterial::GetUnifGlobOffset(), TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y
     ));
     unifHeightmapOffset = TileMaterial::shader->GetUniformLocation("heightmapOffset");
 }
@@ -68,7 +67,7 @@ void LODPlane::CreateTiles() {
     }
 }
 
-void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
+void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
     TileMaterial::shader->Use();
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
     glm::mat4 viewMat;
@@ -95,19 +94,19 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
     GL_CHECK(glBindVertexArray(0));
 }
 
-bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const {
+bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) {
     glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
                           TileMesh::GetGlobalOffset();
     glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
-                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f)
-                           + TileMesh::GetGlobalOffset();     
+                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f) + 
+                           TileMesh::GetGlobalOffset();     
     glm::vec2 lowerRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
                            + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
-                                       (float)TileGeometry::tileSize * pow(2, i)) 
-                           + TileMesh::GetGlobalOffset();
+                                       (float)TileGeometry::tileSize * pow(2, i)) + 
+                           TileMesh::GetGlobalOffset();
     glm::vec2 lowerLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
-                          + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i))
-                          + TileMesh::GetGlobalOffset(); 
+                          + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)) + 
+                          TileMesh::GetGlobalOffset(); 
 
     glm::vec3 upLeft = glm::vec3(upperLeft.x, 0.0f, upperLeft.y);
     glm::vec3 upRight = glm::vec3(upperRight.x, 0.0f, upperRight.y);
@@ -136,6 +135,6 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
                           hmData->data()));
 }
 
-GLuint LODPlane::GetHeightmapTexture() const {
+GLuint LODPlane::GetHeightmapTexture() {
     return heightmapTex;
 }

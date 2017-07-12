@@ -54,7 +54,6 @@ MainCamera::MainCamera(glm::vec3 position)
     right = glm::normalize(glm::cross(front, worldUp));
     up    = glm::normalize(glm::cross(right, front));
     frustum.ExtractPlanes(this);
-    
 }
 
 void MainCamera::updateCameraVectors() {
@@ -67,7 +66,6 @@ void MainCamera::updateCameraVectors() {
     // the more you look up or down which results in slower movement.
     right = glm::normalize(glm::cross(front, worldUp));
     up    = glm::normalize(glm::cross(right, front));
-    frustum.ExtractPlanes(this);
 }
 
 glm::mat4 MainCamera::GetViewMatrix() const {
@@ -84,6 +82,8 @@ void MainCamera::Move(bool *keys, double deltaTime) {
     else if(keys[GLFW_KEY_D]) position += right * velocity;
     if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
     if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
+
+    frustum.ExtractPlanes(this);
 }
 
 void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset) {
@@ -99,6 +99,7 @@ void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset) {
     if(pitch < -89.0f) pitch = -89.0f;
 
     updateCameraVectors();
+    frustum.ExtractPlanes(this);
 }
 
 void MainCamera::ChangeMovementSpeed(int change) {

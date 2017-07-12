@@ -15,8 +15,7 @@
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
 #include "window.hpp"
-#include "topViewFb.hpp"
-#include "drawable.hpp"
+#include "framebuffer.hpp"
 
 using namespace std;
 
@@ -136,12 +135,58 @@ int main(int argc, char **argv) {
     HMParser hmParser("heightmaps/N50E016.hgt");
     lodPlane.SetHeightmap(hmParser.GetDataPtr());
 
-    MainCamera* mainCam = MainCamera::GetInstance();
     TopCamera topCam(1000.0f);
-    TopViewFb topViewFb(1280, 720);
-    TopViewScreenQuad topViewQuad("shaders/framebufferVertexShader.glsl", 
-                                  "shaders/framebufferFragmentShader.glsl",
-                                  &topViewFb);
+    // Rozdzielczość tekstury tego frambuffera musi być taka sama, jak rozdzielczość okna,
+    // żeby wszytsko prawidłowo wyglądało.
+    Framebuffer topViewFb(1280, 720);
+
+    const float screenRatio = (float)Window::width / (float)Window::height;
+    const float topViewXsize = 0.6f;
+    const float topViewYsize = ((topViewXsize * topViewFb.GetResHeight()) / 
+                               (float)topViewFb.GetResWidth()) * screenRatio;
+
+
+    GLuint topViewVao, topViewVbo;
+    GLfloat topViewQuad[] = {
+        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
+        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
+        -1 + topViewXsize, 1 - topViewYsize, 0.0f, 1.0f, 0.0f,
+        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f
+    };
+    GL_CHECK(glGenVertexArrays(1, &topViewVao));
+    GL_CHECK(glBindVertexArray(topViewVao));
+    GL_CHECK(glGenBuffers(1, &topViewVbo));
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, topViewVbo));       
+    GL_CHECK(glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(topViewQuad) * sizeof(GLfloat),
+        &topViewQuad,
+        GL_STATIC_DRAW
+    ));
+    GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0)); 
+    GL_CHECK(glEnableVertexAttribArray(0));
+    GL_CHECK(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 
+                                   (GLvoid*)(3 * sizeof(GLfloat)))); 
+    GL_CHECK(glEnableVertexAttribArray(1));
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    Shader topViewShader("shaders/framebufferVertexShader.glsl", 
+                         "shaders/framebufferFragmentShader.glsl");
+    topViewShader.Use();
+    GL_CHECK(glUniform1i(topViewShader.GetUniformLocation("screenTexture"), 1));
+    glm::mat4 topViewProjMat = glm::perspective(glm::radians(60.0f), 
+                                                (float)topViewFb.GetResWidth() / 
+                                                (float)topViewFb.GetResHeight(), 
+                                                0.1f, 3000.0f);
+
+
+    int w1, h1;
+    glfwGetWindowSize(window, &w1, &h1);
+    int w2, h2;
+    glfwGetFramebufferSize(window, &w2, &h2);
+    assert(w1 == w2);
+    assert(h1 == h2);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -163,25 +208,40 @@ int main(int argc, char **argv) {
             ImGui::ShowTestWindow(&show_test_window);
         }
 
-        mainCam->Move(keys, deltaTime);
-        glm::vec3 mainCamPos = mainCam->GetPosition();
+        MainCamera::GetInstance()->Move(keys, deltaTime);
+        glm::vec3 mainCamPos = MainCamera::GetInstance()->GetPosition();
         TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
-        GL_CHECK(glUniform2f(TileMaterial::shader->GetUniformLocation("globalOffset"), 
-                             mainCamPos.x, mainCamPos.z));
+        GL_CHECK(glUniform2f(TileMaterial::GetUnifGlobOffset(), mainCamPos.x, 
+                             mainCamPos.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
-        lodPlane.DrawFrom(*mainCam);
+        lodPlane.DrawFrom(*MainCamera::GetInstance());
 
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
-        topViewFb.Draw(lodPlane, topCam);
+        topViewFb.Bind();
+        GL_CHECK(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
+        GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)); // we're not using the stencil buffer now
+        GL_CHECK(glEnable(GL_DEPTH_TEST));
+        GL_CHECK(glActiveTexture(GL_TEXTURE0));
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, lodPlane.GetHeightmapTexture()));
+        GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
+                                    1, GL_FALSE, glm::value_ptr(topViewProjMat)));
+        topCam.SetPosition(glm::vec3(mainCamPos.x, topCam.GetPosition().y, mainCamPos.z));
+        lodPlane.DrawFrom(*MainCamera::GetInstance(), &topCam);
+        topViewFb.Unbind();
 
-        // GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
-        //                             1, GL_FALSE, glm::value_ptr(TileMaterial::projectionMatrix)));
+        GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
+                                    1, GL_FALSE, glm::value_ptr(TileMaterial::projectionMatrix)));
 
-        topViewQuad.Draw();
+        topViewShader.Use();
+        GL_CHECK(glDisable(GL_DEPTH_TEST));
+        GL_CHECK(glBindVertexArray(topViewVao));
+        GL_CHECK(glActiveTexture(GL_TEXTURE1));
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, topViewFb.GetColorTexture()));
+        GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
 
         ImGui::Render();
         glfwSwapBuffers(window);
