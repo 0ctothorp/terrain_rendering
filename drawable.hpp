@@ -65,7 +65,7 @@ private:
 
         SetBuffer();
         shader.Use();
-        GL_CHECK(glUniform1i(shader.GetUniformLocation("screenTexture"), 1));
+        GL_CHECK(glUniform1i(shader.GetUniform("screenTexture"), 1));
     }
 
     void SetBuffer() {

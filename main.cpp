@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
@@ -126,9 +127,7 @@ void countFrames(int &frames, double currentFrame, double lastFrame) {
 int main(int argc, char **argv) {
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     ImGui_ImplGlfwGL3_Init(window, false);
-    TileMaterial::shader = new Shader{TileMaterial::vertexShaderPath, 
-                                      TileMaterial::fragmentShaderPath};
-    TileMaterial::SetStaticUniforms();
+
     TileMesh::SetTileGeom();
     
     LODPlane lodPlane;
@@ -174,7 +173,7 @@ int main(int argc, char **argv) {
     Shader topViewShader("shaders/framebufferVertexShader.glsl", 
                          "shaders/framebufferFragmentShader.glsl");
     topViewShader.Use();
-    GL_CHECK(glUniform1i(topViewShader.GetUniformLocation("screenTexture"), 1));
+    GL_CHECK(glUniform1i(topViewShader.GetUniform("screenTexture"), 1));
     glm::mat4 topViewProjMat = glm::perspective(glm::radians(60.0f), 
                                                 (float)topViewFb.GetResWidth() / 
                                                 (float)topViewFb.GetResHeight(), 
@@ -193,7 +192,7 @@ int main(int argc, char **argv) {
     int frames = 0;
     bool show_test_window = true;
     while(glfwWindowShouldClose(window) == 0) {    
-        TileMaterial::shader->Use();
+        lodPlane.shader.Use();
         glActiveTexture(GL_TEXTURE0);
 
         double time = glfwGetTime();
@@ -211,7 +210,8 @@ int main(int argc, char **argv) {
         MainCamera::GetInstance()->Move(keys, deltaTime);
         glm::vec3 mainCamPos = MainCamera::GetInstance()->GetPosition();
         TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
-        GL_CHECK(glUniform2f(TileMaterial::GetUnifGlobOffset(), mainCamPos.x, 
+        lodPlane.shader.Use();
+        GL_CHECK(glUniform2f(lodPlane.shader.GetUniform("globalOffset"), mainCamPos.x, 
                              mainCamPos.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -227,14 +227,14 @@ int main(int argc, char **argv) {
         GL_CHECK(glEnable(GL_DEPTH_TEST));
         GL_CHECK(glActiveTexture(GL_TEXTURE0));
         GL_CHECK(glBindTexture(GL_TEXTURE_2D, lodPlane.GetHeightmapTexture()));
-        GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
+        GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 
                                     1, GL_FALSE, glm::value_ptr(topViewProjMat)));
         topCam.SetPosition(glm::vec3(mainCamPos.x, topCam.GetPosition().y, mainCamPos.z));
         lodPlane.DrawFrom(*MainCamera::GetInstance(), &topCam);
         topViewFb.Unbind();
 
-        GL_CHECK(glUniformMatrix4fv(TileMaterial::shader->GetUniformLocation("projMat"), 
-                                    1, GL_FALSE, glm::value_ptr(TileMaterial::projectionMatrix)));
+        GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 
+                                    1, GL_FALSE, glm::value_ptr(lodPlane.projectionMatrix)));
 
         topViewShader.Use();
         GL_CHECK(glDisable(GL_DEPTH_TEST));
@@ -249,6 +249,4 @@ int main(int argc, char **argv) {
 
     ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
-
-    delete TileMaterial::shader;
 }

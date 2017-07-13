@@ -8,6 +8,7 @@
 #include "mainCamera.hpp"
 #include "edgeMorph.hpp"
 #include "tileMesh.hpp"
+#include "shader.hpp"
 
 using namespace std;
 
@@ -17,7 +18,6 @@ private:
     GLuint heightmapTex;
     vector< vector<TileMesh> > tiles;
     int layers;
-    int lodMeshWidth;
 
     void CalcLayersNumber();
     void CreateTiles();
@@ -26,7 +26,14 @@ private:
 
 public:
     static const int planeWidth = 1024;
-    static constexpr float morphRegion = 0.3f;
+    const float morphRegion = 0.3f;
+    const Shader shader;
+    const glm::mat4 projectionMatrix = glm::perspective(
+        glm::radians(Camera::fov), 
+        (float)Window::width / (float)Window::height,
+        0.01f,
+        2000.0f
+    );
     
     LODPlane();
     ~LODPlane();

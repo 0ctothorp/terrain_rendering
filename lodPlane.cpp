@@ -9,12 +9,18 @@
 #include "tileMesh.hpp"
 
 
-LODPlane::LODPlane() {
+LODPlane::LODPlane() 
+: shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl") {
     CalcLayersNumber();
     CreateTiles();
-    GL_CHECK(glUniform2f(
-        TileMaterial::GetUnifGlobOffset(), TileMesh::GetGlobalOffset().x, 
-        TileMesh::GetGlobalOffset().y));
+    shader.Use();
+    GL_CHECK(glUniform1i(shader.GetUniform("tileSize"), TileGeometry::GetInstance()->tileSize));
+    GL_CHECK(glUniform1f(shader.GetUniform("morphRegion"), morphRegion));
+    GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), 
+                         TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y));
+    GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
+                                glm::value_ptr(projectionMatrix)));
+    GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), LODPlane::planeWidth));
 }
 
 LODPlane::~LODPlane() {
@@ -28,7 +34,6 @@ void LODPlane::CalcLayersNumber() {
         zeroLevel *= 2;
         layers++;
     }
-    lodMeshWidth = zeroLevel;
 }
 
 void LODPlane::CreateTiles() {
@@ -67,38 +72,35 @@ void LODPlane::CreateTiles() {
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
-    TileMaterial::shader->Use();
+    shader.Use();
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
     glm::mat4 viewMat;
     if(additionalCam) viewMat = additionalCam->GetViewMatrix();
     else viewMat = camera.GetViewMatrix();
-    GL_CHECK(glUniformMatrix4fv(TileMaterial::GetUnifViewMat(), 1, GL_FALSE, 
+    GL_CHECK(glUniformMatrix4fv(shader.GetUniform("viewMat"), 1, GL_FALSE, 
                                 glm::value_ptr(viewMat)));
     int indicesSize = TileGeometry::GetInstance()->GetIndicesSize();
 
     for(int i = 0; i < tiles.size(); i++) {
-        glUniform1i(tiles[i][0].material.GetUnifLevel(), i);
+        glUniform1i(shader.GetUniform("level"), i);
         for(int j = 0; j < tiles[i].size(); j++) {
             if(IsTileInsideFrustum(i, j, camera)) {
-                GL_CHECK(glUniform2f(tiles[i][j].material.GetUnifLocOffset(), 
-                                     tiles[i][j].GetLocalOffset().x, 
-                                     tiles[i][j].GetLocalOffset().y));
-                GL_CHECK(glUniform1i(tiles[i][j].material.GetUnifEdgeMorph(), 
-                                     tiles[i][j].GetEdgeMorph()));
+                GL_CHECK(glUniform2f(shader.GetUniform("localOffset"), 
+                     tiles[i][j].GetLocalOffset().x, tiles[i][j].GetLocalOffset().y));
+                GL_CHECK(glUniform1i(shader.GetUniform("edgeMorph"), 
+                    tiles[i][j].GetEdgeMorph()));
                 GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, indicesSize, GL_UNSIGNED_INT, 
-                                        TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+                    TileGeometry::GetInstance()->GetIndicesBufferPtr()));
             } 
         }
     }
-    GL_CHECK(glBindVertexArray(0));
 }
 
 bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) {
     glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
-                          TileMesh::GetGlobalOffset();
+        TileMesh::GetGlobalOffset();
     glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
-                           + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f) + 
-                           TileMesh::GetGlobalOffset();     
+        + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f) + TileMesh::GetGlobalOffset();     
     glm::vec2 lowerRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
                            + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
                                        (float)TileGeometry::tileSize * pow(2, i)) + 
@@ -116,10 +118,8 @@ bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) {
 }
 
 void LODPlane::SetHeightmap(vector<short>* hmData) {
-    Shader* shader = TileMaterial::shader;
-    if(!shader) throw "Static field shader not initialized.";
-    shader->Use();
-    GL_CHECK(glUniform1i(shader->GetUniformLocation("heightmap"), 0));
+    shader.Use();
+    GL_CHECK(glUniform1i(shader.GetUniform("heightmap"), 0));
 
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));

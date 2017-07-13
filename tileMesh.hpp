@@ -14,8 +14,6 @@ private:
     glm::vec2 localOffset;
     int edgeMorph;
 public:
-    TileMaterial material;
-
     static void SetTileGeom();
     static void SetGlobalOffset(float x, float y);
     static glm::vec2 GetGlobalOffset();

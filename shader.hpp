@@ -4,17 +4,16 @@
 
 #include <GL/glew.h>
 
-using namespace std;
 
 class Shader {
 private:
     GLuint programId;
 
     void CompileShader(GLuint vertexShader, GLuint fragmentShader);
-    string LoadShaderFile(string shaderPath);
+    std::string LoadShaderFile(std::string shaderPath);
 public:
-    Shader(const string &vertexShaderPath, const string &fragmentShaderPath);
+    Shader(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
     ~Shader();
     void Use() const;
-    GLuint GetUniformLocation(const string &uniform) const;
+    GLuint GetUniform(const std::string &uniform) const;
 };
