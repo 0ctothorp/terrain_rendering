@@ -13,9 +13,8 @@ LODPlane::LODPlane() {
     CalcLayersNumber();
     CreateTiles();
     GL_CHECK(glUniform2f(
-        TileMaterial::GetUnifGlobOffset(), TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y
-    ));
-    unifHeightmapOffset = TileMaterial::shader->GetUniformLocation("heightmapOffset");
+        TileMaterial::GetUnifGlobOffset(), TileMesh::GetGlobalOffset().x, 
+        TileMesh::GetGlobalOffset().y));
 }
 
 LODPlane::~LODPlane() {
