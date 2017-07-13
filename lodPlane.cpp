@@ -4,7 +4,6 @@
 
 #include "lodPlane.hpp"
 #include "tileGeometry.hpp"
-#include "tileMaterial.hpp"
 #include "glDebug.hpp"
 #include "tileMesh.hpp"
 
