@@ -2,8 +2,6 @@
 #include "mouse.hpp"
 
 
-MainCamera* MainCamera::instance = nullptr;
-
 int MainCamera::Frustum::SignedDistToPoint(int plane, const glm::vec3 &point) const {
     return planes[plane].x * point.x + planes[plane].y * point.y + 
            planes[plane].z * point.z + planes[plane].w;
@@ -85,10 +83,9 @@ void MainCamera::Move(bool *keys, double deltaTime) {
     frustum.ExtractPlanes(this);
 }
 
-void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset) {
-    Mouse* mouse = Mouse::GetInstance();
-    xoffset *= mouse->sensitivity;
-    yoffset *= mouse->sensitivity;
+void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float sensitivity) {
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
     yaw += xoffset;
     while(yaw > 360.0f) yaw -= 360.0f;
@@ -106,8 +103,6 @@ void MainCamera::ChangeMovementSpeed(int change) {
         movementSpeed += change;
 }
 
-// Należy sprawdzić kostkę, a nie tylko prostokąt, bo teren znajduje się na wysokości
-// większej niż 0 i podcas poruszania kamerą w górę obcinane jest to, co nie powinno.
 bool MainCamera::IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, 
                                  const glm::vec3 &point3, const glm::vec3 &point4) const {
     const glm::vec3 y100(0, 100, 0);
@@ -118,10 +113,4 @@ bool MainCamera::IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point
     std::array<glm::vec3, 8> points{point1, point2, point3, point4,
                                     point12, point22, point32, point42};
     return frustum.IsCubeInside(points);
-}
-
-MainCamera* MainCamera::GetInstance() {
-    if(instance == nullptr)
-        instance = new MainCamera();
-    return instance;
 }

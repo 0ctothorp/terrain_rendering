@@ -6,17 +6,14 @@
 
 class Mouse {
 private:
-    static Mouse *instance;
     double lastX;
     double lastY;
     bool firstTime = true;
-
-    Mouse(double _x, double _y);
-    ~Mouse();
+    MainCamera* mainCam;
 public:
     float sensitivity = 0.15f;
 
+    Mouse(double _x, double _y, MainCamera* mainCam);
     void MoveCallback(double xpos, double ypos);
     void ScrollCallback(double yoffset);
-    static Mouse* GetInstance();
 };

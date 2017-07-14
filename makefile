@@ -11,7 +11,7 @@ IMGUIOBJ = $(patsubst $(IMGUI)/%.cpp,$(IMGUI)/%.o,$(IMGUISRC))
 
 EXE = main
 
-DEBUG = off
+DEBUG = on
 
 
 ifeq ($(DEBUG), on)

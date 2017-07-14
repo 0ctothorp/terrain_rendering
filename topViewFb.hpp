@@ -5,9 +5,7 @@
 #include "topCamera.hpp"
 
 class TopViewFb : public Framebuffer {
-private:
-    glm::mat4x4 projectionMatrix;
 public:
     TopViewFb(int resWidth, int resHeight);
-    void Draw(const LODPlane &lodPlane, TopCamera *topCam);
+    void Draw(const LODPlane &lodPlane, TopCamera* topCam, MainCamera* mainCam);
 };
