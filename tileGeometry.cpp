@@ -26,7 +26,7 @@ void TileGeometry::CreateTileIndices() {
     TileGeometry::indices.resize(4 * (tileSize - 1) + 2 * tileSize * tileSize + 2);
     int j = 0;
     TileGeometry::indices[j] = 0;
-    int i;
+    unsigned int i;
     for(i = 0; i < vertices.size() / 3 - (tileSize + 1) - 1; i++) {
         if(i % (tileSize + 1) == (unsigned int)tileSize) {
             TileGeometry::indices[++j] = i + tileSize + 1;

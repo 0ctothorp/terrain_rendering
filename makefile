@@ -26,7 +26,7 @@ $(EXE): $(OBJECTS) $(IMGUIOBJ)
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(IMGUI)/%.o: $(IMGUI)/%.cpp
-	$(CXX) -c $< -o $@ -Wall
+	$(CXX) -c $< -o $@
 
 clean:
 	rm *.o

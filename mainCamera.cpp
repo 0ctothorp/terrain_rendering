@@ -74,7 +74,6 @@ glm::mat4 MainCamera::GetViewMatrix() const {
 
 void MainCamera::Move(bool *keys, double deltaTime) {
     GLfloat velocity = movementSpeed * deltaTime;
-    glm::vec3 prevPos = position;
 
     if(keys[GLFW_KEY_W]) position += front * velocity;
     else if(keys[GLFW_KEY_S]) position -= front * velocity;

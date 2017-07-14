@@ -16,7 +16,8 @@
 #include "HMParser.hpp"
 #include "lodPlane.hpp"
 #include "window.hpp"
-#include "framebuffer.hpp"
+// #include "framebuffer.hpp"
+#include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
 
 using namespace std;
@@ -138,15 +139,16 @@ int main(int argc, char **argv) {
     TopCamera topCam(1000.0f);
     // Rozdzielczość tekstury tego frambuffera musi być taka sama, jak rozdzielczość okna,
     // żeby wszytsko prawidłowo wyglądało.
-    Framebuffer topViewFb(1280, 720);
+    // Framebuffer topViewFb(1280, 720);
+    TopViewFb topViewFb(1280, 720);
     TopViewScreenQuad topViewScreenQuad("shaders/framebufferVertexShader.glsl", 
                                         "shaders/framebufferFragmentShader.glsl",
                                         &topViewFb);
 
-    glm::mat4 topViewProjMat = glm::perspective(glm::radians(60.0f), 
-                                                (float)topViewFb.GetResWidth() / 
-                                                (float)topViewFb.GetResHeight(), 
-                                                0.1f, 3000.0f);
+    // glm::mat4 topViewProjMat = glm::perspective(glm::radians(60.0f), 
+    //                                             (float)topViewFb.GetResWidth() / 
+    //                                             (float)topViewFb.GetResHeight(), 
+    //                                             0.1f, 3000.0f);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -183,15 +185,7 @@ int main(int argc, char **argv) {
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
         topViewFb.Bind();
-        GL_CHECK(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
-        GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)); // we're not using the stencil buffer now
-        GL_CHECK(glEnable(GL_DEPTH_TEST));
-        GL_CHECK(glActiveTexture(GL_TEXTURE0));
-        GL_CHECK(glBindTexture(GL_TEXTURE_2D, lodPlane.GetHeightmapTexture()));
-        GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 
-                                    1, GL_FALSE, glm::value_ptr(topViewProjMat)));
-        topCam.SetPosition(glm::vec3(mainCamPos.x, topCam.GetPosition().y, mainCamPos.z));
-        lodPlane.DrawFrom(*MainCamera::GetInstance(), &topCam);
+        topViewFb.Draw(lodPlane, &topCam);
         topViewFb.Unbind();
 
         GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 

@@ -70,7 +70,7 @@ void LODPlane::CreateTiles() {
     }
 }
 
-void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
+void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
     shader.Use();
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
     glm::mat4 viewMat;
@@ -80,9 +80,9 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
                                 glm::value_ptr(viewMat)));
     int indicesSize = TileGeometry::GetInstance()->GetIndicesSize();
 
-    for(int i = 0; i < tiles.size(); i++) {
+    for(unsigned int i = 0; i < tiles.size(); i++) {
         glUniform1i(shader.GetUniform("level"), i);
-        for(int j = 0; j < tiles[i].size(); j++) {
+        for(unsigned int j = 0; j < tiles[i].size(); j++) {
             if(IsTileInsideFrustum(i, j, camera)) {
                 GL_CHECK(glUniform2f(shader.GetUniform("localOffset"), 
                      tiles[i][j].GetLocalOffset().x, tiles[i][j].GetLocalOffset().y));
@@ -95,7 +95,7 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) {
     }
 }
 
-bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) {
+bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const {
     glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
         TileMesh::GetGlobalOffset();
     glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
@@ -133,6 +133,6 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
                           hmData->data()));
 }
 
-GLuint LODPlane::GetHeightmapTexture() {
+GLuint LODPlane::GetHeightmapTexture() const {
     return heightmapTex;
 }
