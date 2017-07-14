@@ -10,13 +10,11 @@
 #include "tileMesh.hpp"
 #include "shader.hpp"
 
-using namespace std;
-
 
 class LODPlane {
 private:
     GLuint heightmapTex;
-    vector< vector<TileMesh> > tiles;
+    std::vector< std::vector<TileMesh> > tiles;
     int layers;
 
     void CalcLayersNumber();
@@ -38,7 +36,7 @@ public:
     LODPlane();
     ~LODPlane();
 
-    void SetHeightmap(vector<short>*);
+    void SetHeightmap(std::vector<short>*);
     void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr);
     GLuint GetHeightmapTexture();
 };

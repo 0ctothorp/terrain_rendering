@@ -1,43 +1,47 @@
 #include <vector>
 #include <iostream>
 
-#include "glDebug.hpp"
+#include <GL/glew.h>
 
-using namespace std;
+#include "glDebug.hpp"
 
 
 void GetErrors(int line, const char* file) {
     GLenum err;
+    std::string errorStr;
     while((err = glGetError()) != GL_NO_ERROR) {
         switch(err) {
         case GL_INVALID_ENUM:
-            cerr << "GL_INVALID_ENUM at " << line << " in " << file << endl;
+            errorStr = "GL_INVALID_ENUM at ";
             break;
         case GL_INVALID_VALUE:
-            cerr << "GL_INVALID_VALUE at " << line << " in " << file << endl;
+            errorStr = "GL_INVALID_VALUE at ";
             break;
         case GL_INVALID_OPERATION:
-            cerr << "GL_INVALID_OPERATION at " << line << " in " << file << endl;
+            errorStr = "GL_INVALID_OPERATION at ";
             break;
         case GL_STACK_OVERFLOW:
-            cerr << "GL_STACK_OVERFLOW at " << line << " in " << file << endl;
+            errorStr = "GL_STACK_OVERFLOW at ";
             break;
         case GL_STACK_UNDERFLOW:
-            cerr << "GL_STACK_UNDERFLOW at " << line << " in " << file << endl;
+            errorStr = "GL_STACK_UNDERFLOW at ";
             break;
         case GL_OUT_OF_MEMORY:
-            cerr << "GL_OUT_OF_MEMORY at " << line << " in " << file << endl;
+            errorStr = "GL_OUT_OF_MEMORY at ";
             break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
-            cerr << "GL_INVALID_FRAMEBUFFER_OPERATION at " << line << " in " << file << endl;
+            errorStr = "GL_INVALID_FRAMEBUFFER_OPERATION at ";
             break;
         case GL_CONTEXT_LOST:
-            cerr << "GL_CONTEXT_LOST at " << line << " in " << file << endl;
+            errorStr = "GL_CONTEXT_LOST at ";
             break;
         case GL_TABLE_TOO_LARGE:
-            cerr << "GL_TABLE_TOO_LARGE at " << line << " in " << file << endl;
+            errorStr = "GL_TABLE_TOO_LARGE at ";
             break;
-        default: break;
+        default: 
+            break;
         }
     }
+    if(errorStr.size() > 0)
+        std::cerr << errorStr << line << " in " << file << std::endl;
 }

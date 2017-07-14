@@ -1,2 +1,3 @@
-build/*
+*.o
+libs/imgui/*.o
 main

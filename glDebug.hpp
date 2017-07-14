@@ -1,10 +1,11 @@
 #pragma once
 
-#include <GL/glew.h>
 
-// Nalezy tego używać przy każdym wywołaniu funkcji gl*,
-// bo inaczej będzie wypisywac błędne numery linii i nazwy plików.
-#define GL_CHECK(x) x; GetErrors(__LINE__, __FILE__)
+#ifdef DEBUG 
+    #define GL_CHECK(x) x; GetErrors(__LINE__, __FILE__)
+#else
+    #define GL_CHECK(x) x
+#endif
 
 
 void GetErrors(int, const char*);

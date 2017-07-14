@@ -100,7 +100,9 @@ GLFWwindow* GetGLFWwindow(const char *name){
     }   
 
     GL_CHECK();
+    #ifdef DEBUG
     cerr << "Ignore preceding error.\n" << endl;
+    #endif
 
     GL_CHECK(glViewport(0, 0, Window::width, Window::height));
     GL_CHECK(glEnable(GL_DEPTH_TEST));

@@ -5,28 +5,6 @@
 TopViewScreenQuad::TopViewScreenQuad(std::string vshader, std::string fshader, Framebuffer *fb) 
 : Drawable(vshader, fshader)
 , fb(fb) {
-    Init();
-}
-
-TopViewScreenQuad::~TopViewScreenQuad() {
-    delete[] topViewQuad;
-}
-
-void TopViewScreenQuad::Init() {
-    screenRatio = (float)Window::width / (float)Window::height;
-    float topViewXsize = 0.6f;
-    float topViewYsize = ((topViewXsize * fb->GetResHeight()) / 
-                          (float)fb->GetResWidth()) * screenRatio;
-
-    topViewQuad = new GLfloat[bufferSize] {
-        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
-        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
-        -1 + topViewXsize, 1 - topViewYsize, 0.0f, 1.0f, 0.0f,
-        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f
-    };
-
     SetBuffer();
     shader.Use();
     GL_CHECK(glUniform1i(shader.GetUniform("screenTexture"), 1));
@@ -34,12 +12,33 @@ void TopViewScreenQuad::Init() {
 
 void TopViewScreenQuad::SetBuffer() {
     BindVbo();
+    SetBufferData();
+    SetBufferAttributes();
+    UnbindVbo();
+}
+
+void TopViewScreenQuad::SetBufferData() {
+    float screenRatio = (float)Window::width / (float)Window::height;
+    float topViewXsize = 0.6f;
+    float topViewYsize = ((topViewXsize * fb->GetResHeight()) / 
+                         (float)fb->GetResWidth()) * screenRatio;
+    GLfloat topViewQuad[] {
+        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
+        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
+        -1 + topViewXsize, 1 - topViewYsize, 0.0f, 1.0f, 0.0f,
+        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f
+    };
     GL_CHECK(glBufferData(
         GL_ARRAY_BUFFER,
-        bufferSize * sizeof(GLfloat),
-        topViewQuad,
+        sizeof(topViewQuad) * sizeof(GLfloat),
+        &topViewQuad,
         GL_STATIC_DRAW
     ));
+}
+
+void TopViewScreenQuad::SetBufferAttributes() {
     BindVao();
     GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0)); 
     GL_CHECK(glEnableVertexAttribArray(0));
@@ -47,7 +46,6 @@ void TopViewScreenQuad::SetBuffer() {
                                    (GLvoid*)(3 * sizeof(GLfloat)))); 
     GL_CHECK(glEnableVertexAttribArray(1));
     UnbindVao();
-    UnbindVbo();
 }
 
 void TopViewScreenQuad::Draw() {
