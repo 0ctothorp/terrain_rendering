@@ -1,29 +1,14 @@
 #pragma once
 
-#include <array>
-
-#include <glm/gtc/matrix_access.hpp>
-
 #include "camera.hpp"
 #include "window.hpp"
 #include "tileMesh.hpp"
+#include "frustum.hpp"
 
 
 class MainCamera : public Camera {
 private:
-    class Frustum {
-    private: 
-        std::array<glm::vec4, 6> planes;
-        const glm::mat4x4 *projMat;
-        enum Side {left = 0, right, top, bottom, near, far};
-
-        int SignedDistToPoint(int plane, const glm::vec3 &point) const;
-    public:
-        Frustum(const Camera* camera, const glm::mat4x4* projMat);
-        void ExtractPlanes(const Camera* camera);
-        bool IsCubeInside(const std::array<glm::vec3, 8> &points) const;
-    } frustum;
-
+    Frustum frustum;
     float yaw = glm::radians(0.0f);
     float pitch = glm::radians(-25.0f);
     float movementSpeed = 1.0f;

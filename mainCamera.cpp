@@ -2,48 +2,6 @@
 #include "mouse.hpp"
 
 
-int MainCamera::Frustum::SignedDistToPoint(int plane, const glm::vec3 &point) const {
-    return planes[plane].x * point.x + planes[plane].y * point.y + 
-           planes[plane].z * point.z + planes[plane].w;
-}
-
-MainCamera::Frustum::Frustum(const Camera* camera, const glm::mat4x4* projMat)
-: projMat(projMat) {
-    ExtractPlanes(camera);
-}
-
-void MainCamera::Frustum::ExtractPlanes(const Camera* camera) {
-    glm::mat4x4 model;
-    glm::vec3 camPos = camera->GetPosition();
-    glm::translate(model, camPos);
-    glm::mat4x4 vpMat = *projMat * camera->GetViewMatrix() * model;
-
-    glm::vec4 row4 = glm::row(vpMat, 3);
-    glm::vec4 row3 = glm::row(vpMat, 2);
-    glm::vec4 row2 = glm::row(vpMat, 1);
-    glm::vec4 row1 = glm::row(vpMat, 0);
-
-    planes[left] = row4 + row1;
-    planes[right] = row4 - row1;
-    planes[bottom] = row4 + row2;
-    planes[top] = row4 - row2;
-    planes[near] = row4 + row3;
-    planes[far] = row4 - row3;
-}
-
-bool MainCamera::Frustum::IsCubeInside(const std::array<glm::vec3, 8> &points) const {
-    for(int i = 0; i < 6; i++) {
-        int out = 0;
-        for(int j = 0; j < 8; j++) {
-            if(SignedDistToPoint(i, points[j]) < 0)
-                out++;
-        }
-        if(out == 8)
-            return false;
-    }
-    return true;
-}
-
 MainCamera::MainCamera(glm::vec3 position)
 : Camera(position)
 , frustum(this, &projectionMat) {
@@ -51,7 +9,7 @@ MainCamera::MainCamera(glm::vec3 position)
     front = glm::vec3(0.0f, 0.0f, -1.0f);
     right = glm::normalize(glm::cross(front, worldUp));
     up    = glm::normalize(glm::cross(right, front));
-    frustum.ExtractPlanes(this);
+    frustum.ExtractPlanes();
 }
 
 void MainCamera::updateCameraVectors() {
@@ -80,7 +38,7 @@ void MainCamera::Move(bool *keys, double deltaTime) {
     if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
     if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
 
-    frustum.ExtractPlanes(this);
+    frustum.ExtractPlanes();
 }
 
 void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float sensitivity) {
@@ -95,7 +53,7 @@ void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float se
     if(pitch < -89.0f) pitch = -89.0f;
 
     updateCameraVectors();
-    frustum.ExtractPlanes(this);
+    frustum.ExtractPlanes();
 }
 
 void MainCamera::ChangeMovementSpeed(int change) {
