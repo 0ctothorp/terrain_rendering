@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +16,7 @@
 #include "window.hpp"
 #include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
+#include "utils.hpp"
 
 
 const int MAX_KEY_CODE = 348;
@@ -115,17 +115,6 @@ GLFWwindow* GetGLFWwindow(const char *name){
     return window;
 }
 
-void countFrames(int &frames, double currentFrame, double lastFrame) {
-    static double timePassed = 0;
-    timePassed += currentFrame - lastFrame;
-    if(timePassed >= 1) {
-        cout << frames << " fps\n";
-        frames = 0;
-        timePassed = 0;
-    }
-    frames++;
-}
-
 int main(int argc, char **argv) {
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     ImGui_ImplGlfwGL3_Init(window, false);
@@ -133,18 +122,13 @@ int main(int argc, char **argv) {
     LODPlane lodPlane;
     TopCamera topCam(1000.0f);
     TopViewFb topViewFb(1280, 720);
-    TopViewScreenQuad topViewScreenQuad("shaders/framebufferVertexShader.glsl", 
-                                        "shaders/framebufferFragmentShader.glsl",
-                                        &topViewFb);
+    TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
     bool show_test_window = true;
     while(glfwWindowShouldClose(window) == 0) {    
-        lodPlane.shader.Use();
-        glActiveTexture(GL_TEXTURE0);
-
         double time = glfwGetTime();
         deltaTime = time - prevFrameTime;
         countFrames(frames, time, prevFrameTime);
@@ -160,9 +144,6 @@ int main(int argc, char **argv) {
         mainCamera.Move(keys, deltaTime);
         glm::vec3 mainCamPos = mainCamera.GetPosition();
         TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
-        lodPlane.shader.Use();
-        GL_CHECK(glUniform2f(lodPlane.shader.GetUniform("globalOffset"), mainCamPos.x, 
-                             mainCamPos.z));
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));

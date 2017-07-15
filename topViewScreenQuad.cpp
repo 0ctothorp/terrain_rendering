@@ -2,8 +2,8 @@
 #include "glDebug.hpp"
 
 
-TopViewScreenQuad::TopViewScreenQuad(std::string vshader, std::string fshader, Framebuffer *fb) 
-: Drawable(vshader, fshader)
+TopViewScreenQuad::TopViewScreenQuad(Framebuffer *fb) 
+: Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl")
 , fb(fb) {
     SetBuffer();
     shader.Use();

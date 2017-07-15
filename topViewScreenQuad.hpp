@@ -13,6 +13,6 @@ private:
     void SetBufferData();
     void SetBufferAttributes();
 public:
-    TopViewScreenQuad(std::string vshader, std::string fshader, Framebuffer *fb);
+    TopViewScreenQuad(Framebuffer *fb);
     void Draw();
 };

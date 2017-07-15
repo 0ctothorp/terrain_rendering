@@ -10,17 +10,11 @@
 
 
 LODPlane::LODPlane() 
-: shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl") {
+: xzOffset(0, 0)
+, shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl") {
     CalcLayersNumber();
     CreateTiles();
-    shader.Use();
-    GL_CHECK(glUniform1i(shader.GetUniform("tileSize"), TileGeometry::GetInstance()->tileSize));
-    GL_CHECK(glUniform1f(shader.GetUniform("morphRegion"), morphRegion));
-    GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), 
-                         TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y));
-    GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
-                                glm::value_ptr(projectionMatrix)));
-    GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), LODPlane::planeWidth));
+    SetUniforms();
     SetHeightmap();
 }
 
@@ -72,8 +66,40 @@ void LODPlane::CreateTiles() {
     }
 }
 
+void LODPlane::SetUniforms() {
+    shader.Use();
+    GL_CHECK(glUniform1i(shader.GetUniform("tileSize"), TileGeometry::GetInstance()->tileSize));
+    GL_CHECK(glUniform1f(shader.GetUniform("morphRegion"), morphRegion));
+    GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), 
+                         TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y));
+    GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
+                                glm::value_ptr(projectionMatrix)));
+    GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), LODPlane::planeWidth));
+}
+
+void LODPlane::SetHeightmap() {
+    shader.Use();
+    GL_CHECK(glUniform1i(shader.GetUniform("heightmap"), 0));
+
+    GL_CHECK(glGenTextures(1, &heightmapTex));
+    GL_CHECK(glActiveTexture(GL_TEXTURE0));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
+
+    HMParser hmParser("heightmaps/N50E016.hgt");
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
+                          hmParser.GetDataPtr()->data()));
+}
+
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
     shader.Use();
+    GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), camera.GetPosition().x, 
+                         camera.GetPosition().z));
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
     glm::mat4 viewMat;
     if(additionalCam) viewMat = additionalCam->GetViewMatrix();
@@ -116,25 +142,6 @@ bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) cons
     glm::vec3 loLeft = glm::vec3(lowerLeft.x, 0.0f, lowerLeft.y);
 
     return mainCam.IsInsideFrustum(upLeft, upRight, loRight, loLeft);
-}
-
-void LODPlane::SetHeightmap() {
-    shader.Use();
-    GL_CHECK(glUniform1i(shader.GetUniform("heightmap"), 0));
-
-    GL_CHECK(glGenTextures(1, &heightmapTex));
-    GL_CHECK(glActiveTexture(GL_TEXTURE0));
-    GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
-
-    HMParser hmParser("heightmaps/N50E016.hgt");
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
-                          hmParser.GetDataPtr()->data()));
 }
 
 GLuint LODPlane::GetHeightmapTexture() const {

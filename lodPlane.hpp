@@ -16,13 +16,13 @@ private:
     GLuint heightmapTex;
     std::vector< std::vector<TileMesh> > tiles;
     int layers;
-    // HMParser hmParser;
+    glm::vec2 xzOffset;
 
     void CalcLayersNumber();
     void CreateTiles();
-    bool IsTileInsideCameraView(int i, int j, const MainCamera &camera);
     bool IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const;
     void SetHeightmap();
+    void SetUniforms();
 
 public:
     static const int planeWidth = 1024;
