@@ -13,7 +13,6 @@
 #include "topCamera.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
-#include "HMParser.hpp"
 #include "lodPlane.hpp"
 #include "window.hpp"
 #include "topViewFb.hpp"
@@ -132,9 +131,6 @@ int main(int argc, char **argv) {
     ImGui_ImplGlfwGL3_Init(window, false);
     
     LODPlane lodPlane;
-    HMParser hmParser("heightmaps/N50E016.hgt");
-    lodPlane.SetHeightmap(hmParser.GetDataPtr());
-
     TopCamera topCam(1000.0f);
     TopViewFb topViewFb(1280, 720);
     TopViewScreenQuad topViewScreenQuad("shaders/framebufferVertexShader.glsl", 

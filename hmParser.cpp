@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "HMParser.hpp"
+#include "hmParser.hpp"
 
 HMParser::HMParser(const string &hmPath) {
     data.resize(width * width);

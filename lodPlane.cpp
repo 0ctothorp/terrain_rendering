@@ -6,6 +6,7 @@
 #include "tileGeometry.hpp"
 #include "glDebug.hpp"
 #include "tileMesh.hpp"
+#include "hmParser.hpp"
 
 
 LODPlane::LODPlane() 
@@ -20,6 +21,7 @@ LODPlane::LODPlane()
     GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
                                 glm::value_ptr(projectionMatrix)));
     GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), LODPlane::planeWidth));
+    SetHeightmap();
 }
 
 LODPlane::~LODPlane() {
@@ -116,7 +118,7 @@ bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) cons
     return mainCam.IsInsideFrustum(upLeft, upRight, loRight, loLeft);
 }
 
-void LODPlane::SetHeightmap(vector<short>* hmData) {
+void LODPlane::SetHeightmap() {
     shader.Use();
     GL_CHECK(glUniform1i(shader.GetUniform("heightmap"), 0));
 
@@ -129,8 +131,10 @@ void LODPlane::SetHeightmap(vector<short>* hmData) {
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
+
+    HMParser hmParser("heightmaps/N50E016.hgt");
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
-                          hmData->data()));
+                          hmParser.GetDataPtr()->data()));
 }
 
 GLuint LODPlane::GetHeightmapTexture() const {
