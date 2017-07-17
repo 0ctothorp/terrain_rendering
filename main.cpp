@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
     ImGui_ImplGlfwGL3_Init(window, false);
     
     LODPlane lodPlane;
-    TopCamera topCam(1000.0f);
+    TopCamera topCam(1500.0f);
     TopViewFb topViewFb(1280, 720);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 

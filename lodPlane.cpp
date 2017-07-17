@@ -91,9 +91,12 @@ void LODPlane::SetHeightmap() {
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
 
-    HMParser hmParser("heightmaps/N50E016.hgt");
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201, 1201, 0, GL_RED, GL_SHORT, 
-                          hmParser.GetDataPtr()->data()));
+    std::vector<std::string> heightmaps{"heightmaps/N50E016.hgt", "heightmaps/N50E017.hgt", 
+        "heightmaps/N49E016.hgt", "heightmaps/N49E017.hgt"};
+    int texSize = sqrt(heightmaps.size());
+    HMParser hmParser(heightmaps);
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201 * texSize, 1201 * texSize, 0, GL_RED, 
+                          GL_SHORT, hmParser.GetDataPtr()->data()));
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {

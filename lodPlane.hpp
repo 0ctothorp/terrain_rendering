@@ -25,7 +25,7 @@ private:
     void SetUniforms();
 
 public:
-    static const int planeWidth = 1024;
+    static const int planeWidth = 2048;
     const float morphRegion = 0.3f;
     const Shader shader;
     const glm::mat4 projectionMatrix = glm::perspective(
