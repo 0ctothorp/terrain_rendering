@@ -17,6 +17,7 @@
 #include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
 #include "utils.hpp"
+#include "cmdLineArgs.hpp"
 
 
 const int MAX_KEY_CODE = 348;
@@ -116,10 +117,24 @@ GLFWwindow* GetGLFWwindow(const char *name){
 }
 
 int main(int argc, char **argv) {
+    int heightmapsInRow = 1;
+    int planeWidth = 1024;
+
+    if(argc < 2) {
+        std::cerr << "Wrong number of command line arguments provided.\n";
+        return 1;
+    }
+    if(argc >= 3)
+        heightmapsInRow = std::stoi(argv[2]);
+    if(argc == 4)
+        planeWidth = std::stoi(argv[3]);
+
+    std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
+
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     ImGui_ImplGlfwGL3_Init(window, false);
     
-    LODPlane lodPlane;
+    LODPlane lodPlane(heightmaps, planeWidth);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(1280, 720);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);

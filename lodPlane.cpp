@@ -9,13 +9,14 @@
 #include "hmParser.hpp"
 
 
-LODPlane::LODPlane() 
+LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth) 
 : xzOffset(0, 0)
+, planeWidth(planeWidth)
 , shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl") {
     CalcLayersNumber();
     CreateTiles();
     SetUniforms();
-    SetHeightmap();
+    SetHeightmap(heightmapsPaths);
 }
 
 LODPlane::~LODPlane() {
@@ -74,10 +75,10 @@ void LODPlane::SetUniforms() {
                          TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y));
     GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
                                 glm::value_ptr(projectionMatrix)));
-    GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), LODPlane::planeWidth));
+    GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), planeWidth));
 }
 
-void LODPlane::SetHeightmap() {
+void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     shader.Use();
     GL_CHECK(glUniform1i(shader.GetUniform("heightmap"), 0));
 
@@ -91,10 +92,8 @@ void LODPlane::SetHeightmap() {
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
 
-    std::vector<std::string> heightmaps{"heightmaps/N50E016.hgt", "heightmaps/N50E017.hgt", 
-        "heightmaps/N49E016.hgt", "heightmaps/N49E017.hgt"};
-    int texSize = sqrt(heightmaps.size());
-    HMParser hmParser(heightmaps);
+    HMParser hmParser(heightmapsPaths);
+    int texSize = sqrt(heightmapsPaths.size());
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 1201 * texSize, 1201 * texSize, 0, GL_RED, 
                           GL_SHORT, hmParser.GetDataPtr()->data()));
 }

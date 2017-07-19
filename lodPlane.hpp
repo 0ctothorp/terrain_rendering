@@ -17,15 +17,15 @@ private:
     std::vector< std::vector<TileMesh> > tiles;
     int layers;
     glm::vec2 xzOffset;
+    int planeWidth;
 
     void CalcLayersNumber();
     void CreateTiles();
     bool IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const;
-    void SetHeightmap();
+    void SetHeightmap(const std::vector<std::string>& heightmapsPaths);
     void SetUniforms();
 
 public:
-    static const int planeWidth = 2048;
     const float morphRegion = 0.3f;
     const Shader shader;
     const glm::mat4 projectionMatrix = glm::perspective(
@@ -35,7 +35,7 @@ public:
         2000.0f
     );
     
-    LODPlane();
+    LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth);
     ~LODPlane();
 
     void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;

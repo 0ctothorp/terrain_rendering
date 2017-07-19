@@ -62,7 +62,8 @@ void main() {
     int heightmapSize = textureSize(heightmap, 0).x;
     sample_ = texture(
         heightmap, 
-        (position.xz + vec2(512.0f, 512.0f) + (heightmapSize - meshSize) / 2.0f) / heightmapSize
+        (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
+        + (heightmapSize - meshSize) / 2.0f) / heightmapSize
     ).r;
     position.y = sample_ * 750;
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
