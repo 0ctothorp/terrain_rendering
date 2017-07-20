@@ -38,7 +38,10 @@ void HMParser::ParseHeightmaps() {
     // - height data every 3 arc-seconds in both directions
     int heightmapsInRow = sqrt(heightmapPaths.size());
     for(int j = 0; j < heightmapsInRow; j++) {
-        for(int k = 0; k < width; k++) {
+        // k < width - 1, bo pierwszy i ostatni wiersz, jak i pierwsza i ostatnia kolumna
+        // danych nakładają się z danymi sąsiedniej mapy wysokości. Ja łączę heightmapy w 
+        // prawo i w dół, więc omijam ostatni wiersz.
+        for(int k = 0; k < width - 1; k++) {
             for(int m = 0; m < heightmapsInRow; m++) {
                 TryToReadAFile(heightmapsInRow, j, m);
             }
@@ -51,7 +54,9 @@ void HMParser::TryToReadAFile(int heightmapsInRow, int rowNumber, int positionIn
         short row[width];
         heightmapFiles[heightmapsInRow * rowNumber + positionInRow]
             .read(reinterpret_cast<char*>(&row), sizeof(short) * width);
-        data.insert(data.end(), row, row + 1201);
+        // width - 1, bo z takiego powodu, jak opisałem w HMParser::ParseHeightmaps
+        // omijam ostatnią kolumnę danych.
+        data.insert(data.end(), row, row + width - 1);
     } catch(const std::ifstream::failure &e) {
         std::cerr << "[EXCEPTION: HMParser::ParseHM] " << e.what() << '\n'
                   << "Error code: " << e.code() << '\n';

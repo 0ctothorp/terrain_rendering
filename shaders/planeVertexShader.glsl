@@ -65,7 +65,7 @@ void main() {
         (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
         + (heightmapSize - meshSize) / 2.0f) / heightmapSize
     ).r;
-    position.y = sample_ * 750;
+    position.y = sample_ * 750 /*363*/;
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     poss = position;
 }

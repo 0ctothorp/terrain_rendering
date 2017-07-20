@@ -7,7 +7,6 @@
 
 class HMParser {
 private:
-    const int width = 1201;
     int totalWidth;
     std::vector<short> data;
     std::vector<std::ifstream> heightmapFiles;
@@ -18,6 +17,8 @@ private:
     void TryToReadAFile(int heightmapsInRow, int row, int positionInRow);
     void CloseFiles();
 public:
+    const int width = 1201;
+    
     HMParser(const std::vector<std::string>& heightmaps);
     std::vector<short>* GetDataPtr();
 };
