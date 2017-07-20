@@ -5,6 +5,8 @@ lat=${file:1:2}
 lon=${file:4:3}
 catalog='heightmaps/'
 
+mkdir -p $catalog
+
 if [ ${lon:0:2} = '00' ]
 then
     lon=${lon:2}
