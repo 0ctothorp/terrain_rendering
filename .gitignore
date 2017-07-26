@@ -1,5 +1,5 @@
 *.o
-libs/imgui/imgui.o
+libs/*/*.o
 main
 heightmaps/*
 main.exe
