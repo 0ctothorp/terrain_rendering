@@ -20,7 +20,7 @@ IMGUIOBJ = $(patsubst $(IMGUI)/%.cpp,$(IMGUI)/%.o,$(IMGUISRC))
 EXE = main
 
 ifeq ($(WINDOWS), true)
-	EXE += .exe
+	EXE := $(EXE).exe
 endif
 
 DEBUG = on
