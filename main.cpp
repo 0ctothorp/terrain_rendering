@@ -128,6 +128,10 @@ int main(int argc, char **argv) {
         heightmapsInRow = std::stoi(argv[2]);
     if(argc == 4)
         planeWidth = std::stoi(argv[3]);
+    if(argc == 6) {
+        Window::width = std::stoi(argv[4]);
+        Window::height = std::stoi(argv[5]);
+    }
 
     std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
 
