@@ -1,6 +1,14 @@
 CXX = g++
 
-LDFLAGS = -lGL -lGLEW -lglfw -lgdal
+LDFLAGS = 
+WINDOWS = false
+
+ifeq ($(WINDOWS), true)
+	LDFLAGS += -lopengl32 -lglew32 -lglfw3
+else
+	LDFLAGS += -lGL -lGLEW -lglfw
+endif
+
 CXXFLAGS = -std=c++14 -Wall
 
 SOURCES = $(wildcard *.cpp)
@@ -10,6 +18,10 @@ IMGUISRC = $(wildcard $(IMGUI)/*.cpp)
 IMGUIOBJ = $(patsubst $(IMGUI)/%.cpp,$(IMGUI)/%.o,$(IMGUISRC))
 
 EXE = main
+
+ifeq ($(WINDOWS), true)
+	EXE += .exe
+endif
 
 DEBUG = on
 

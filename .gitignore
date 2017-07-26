@@ -2,3 +2,4 @@
 libs/imgui/*.o
 main
 heightmaps/*
+main.exe
