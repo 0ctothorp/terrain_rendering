@@ -2,6 +2,7 @@
 
 
 TileGeometry* TileGeometry::instance = nullptr;
+int TileGeometry::tileSize = 64;
 
 TileGeometry* TileGeometry::GetInstance() {
     if(instance) return instance;

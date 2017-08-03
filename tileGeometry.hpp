@@ -24,7 +24,8 @@ private:
     TileGeometry();
 
 public:
-    static constexpr int tileSize = 64;
+    // hide it and make an accessor
+    static int tileSize;
 
     ~TileGeometry();
     static TileGeometry* GetInstance();

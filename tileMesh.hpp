@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 
-#include "tileGeometry.hpp"
 #include "edgeMorph.hpp"
 
 

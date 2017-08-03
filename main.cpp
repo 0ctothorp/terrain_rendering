@@ -18,6 +18,7 @@
 #include "topViewScreenQuad.hpp"
 #include "utils.hpp"
 #include "cmdLineArgs.hpp"
+#include "tileGeometry.hpp"
 
 
 const int MAX_KEY_CODE = 348;
@@ -126,12 +127,14 @@ int main(int argc, char **argv) {
     }
     if(argc >= 3)
         heightmapsInRow = std::stoi(argv[2]);
-    if(argc == 4)
+    if(argc >= 4)
         planeWidth = std::stoi(argv[3]);
-    if(argc == 6) {
+    if(argc >= 6) {
         Window::width = std::stoi(argv[4]);
         Window::height = std::stoi(argv[5]);
     }
+    if(argc >= 7)
+        TileGeometry::tileSize = std::stoi(argv[6]);
 
     std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
 
@@ -140,8 +143,10 @@ int main(int argc, char **argv) {
     
     LODPlane lodPlane(heightmaps, planeWidth);
     TopCamera topCam(1500.0f);
-    TopViewFb topViewFb(1280, 720);
+    TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
+
+    GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 25.0f, 0.0f));
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -165,20 +170,20 @@ int main(int argc, char **argv) {
         TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+        // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
         lodPlane.DrawFrom(mainCamera);
 
-        GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
-        topViewFb.Bind();
-        topViewFb.Draw(lodPlane, &topCam, &mainCamera);
-        topViewFb.Unbind();
+        // topViewFb.Bind();
+        // topViewFb.Draw(lodPlane, &topCam, &mainCamera);
+        // topViewFb.Unbind();
 
         GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 
                                     1, GL_FALSE, glm::value_ptr(lodPlane.projectionMatrix)));
 
-        topViewScreenQuad.Draw();
+        // topViewScreenQuad.Draw();
 
         ImGui::Render();
         glfwSwapBuffers(window);
