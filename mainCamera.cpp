@@ -37,8 +37,9 @@ void MainCamera::Move(bool *keys, double deltaTime) {
     else if(keys[GLFW_KEY_D]) position += right * velocity;
     if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
     if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
-
-    frustum.ExtractPlanes();
+    
+    if(!meshMovementLocked)
+        frustum.ExtractPlanes();
 }
 
 void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float sensitivity) {
@@ -53,7 +54,9 @@ void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float se
     if(pitch < -89.0f) pitch = -89.0f;
 
     updateCameraVectors();
-    frustum.ExtractPlanes();
+
+    if(!meshMovementLocked)
+        frustum.ExtractPlanes();
 }
 
 void MainCamera::ChangeMovementSpeed(int change) {

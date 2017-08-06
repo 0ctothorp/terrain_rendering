@@ -25,6 +25,7 @@ public:
         near,
         far
     );
+    bool meshMovementLocked = false;
 
     MainCamera(glm::vec3 position = glm::vec3(0, 20, 0));
     virtual glm::mat4 GetViewMatrix() const override;

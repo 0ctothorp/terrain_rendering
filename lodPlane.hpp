@@ -18,6 +18,7 @@ private:
     int layers;
     glm::vec2 xzOffset;
     int planeWidth;
+    bool meshMovementLocked = false;
 
     void CalcLayersNumber();
     void CreateTiles();
@@ -40,4 +41,5 @@ public:
 
     void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;
     GLuint GetHeightmapTexture() const;
+    void ToggleMeshMovementLock(MainCamera &mainCam);
 };

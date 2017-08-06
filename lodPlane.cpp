@@ -101,8 +101,9 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
     shader.Use();
-    GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), camera.GetPosition().x, 
-                         camera.GetPosition().z));
+    if(!meshMovementLocked)
+        GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), camera.GetPosition().x, 
+                            camera.GetPosition().z));
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
     glm::mat4 viewMat;
     if(additionalCam) viewMat = additionalCam->GetViewMatrix();
@@ -149,4 +150,9 @@ bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) cons
 
 GLuint LODPlane::GetHeightmapTexture() const {
     return heightmapTex;
+}
+
+void LODPlane::ToggleMeshMovementLock(MainCamera &mainCam) {
+    meshMovementLocked = !meshMovementLocked;
+    mainCam.meshMovementLocked = !mainCam.meshMovementLocked;
 }

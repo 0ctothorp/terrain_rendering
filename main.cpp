@@ -20,9 +20,7 @@
 #include "cmdLineArgs.hpp"
 #include "tileGeometry.hpp"
 
-
-const int MAX_KEY_CODE = 348;
-bool keys[MAX_KEY_CODE]{false};
+bool keys[GLFW_KEY_LAST]{false};
 bool cursor = false;
 MainCamera mainCamera;
 Mouse mouse((float)Window::width / 2.0f, (float)Window::height / 2.0f, &mainCamera);
@@ -113,6 +111,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetScrollCallback(window, MouseScrollCallback);
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
 
     return window;
 }
@@ -146,7 +145,7 @@ int main(int argc, char **argv) {
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
-    GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 25.0f, 0.0f));
+    GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 150.0f, 0.0f));
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -172,18 +171,20 @@ int main(int argc, char **argv) {
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
+        if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+            lodPlane.ToggleMeshMovementLock(mainCamera);    
         lodPlane.DrawFrom(mainCamera);
 
         // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
-        // topViewFb.Bind();
-        // topViewFb.Draw(lodPlane, &topCam, &mainCamera);
-        // topViewFb.Unbind();
+        topViewFb.Bind();
+        topViewFb.Draw(lodPlane, &topCam, &mainCamera);
+        topViewFb.Unbind();
 
         GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 
                                     1, GL_FALSE, glm::value_ptr(lodPlane.projectionMatrix)));
 
-        // topViewScreenQuad.Draw();
+        topViewScreenQuad.Draw();
 
         ImGui::Render();
         glfwSwapBuffers(window);

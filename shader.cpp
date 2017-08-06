@@ -88,6 +88,6 @@ void Shader::Use() const {
 }
 
 GLuint Shader::GetUniform(const std::string &uniform) const {
-    GLuint loc = GL_CHECK(glGetUniformLocation(programId, uniform.c_str()));
+    GLuint loc =  GL_CHECK( glGetUniformLocation(programId, uniform.c_str()) ) ;
     return loc;
 }

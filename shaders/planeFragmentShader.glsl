@@ -39,7 +39,7 @@ void main() {
     vec3 lightColor = vec3(1, 1, 1);
     vec3 diffuseComponent = diffuseImpact * lightColor;
 
-    float ambientStrength = 0.2f;
+    float ambientStrength = 0.3f;
     vec3 ambient = ambientStrength * lightColor;
     fragColor = vec4((ambient + diffuseComponent) * vec3(color.x, color.y, color.z), 1.0f);
 }
