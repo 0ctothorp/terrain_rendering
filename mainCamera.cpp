@@ -1,10 +1,13 @@
+#include <iostream>
+
 #include "mainCamera.hpp"
 #include "mouse.hpp"
 
 
 MainCamera::MainCamera(glm::vec3 position)
 : Camera(position)
-, frustum(this, &projectionMat) {
+, frustum(this, &projectionMat) 
+, position2(position) {
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     front = glm::vec3(0.0f, 0.0f, -1.0f);
     right = glm::normalize(glm::cross(front, worldUp));
@@ -25,21 +28,31 @@ void MainCamera::updateCameraVectors() {
 }
 
 glm::mat4 MainCamera::GetViewMatrix() const {
-    return glm::lookAt(position, position + front, up);
+    if(!meshMovementLocked)
+        return glm::lookAt(position, position + front, up);
+    else 
+        return glm::lookAt(position2, position2 + front, up);
 }
 
 void MainCamera::Move(bool *keys, double deltaTime) {
     GLfloat velocity = movementSpeed * deltaTime;
-
-    if(keys[GLFW_KEY_W]) position += front * velocity;
-    else if(keys[GLFW_KEY_S]) position -= front * velocity;
-    if(keys[GLFW_KEY_A]) position -= right * velocity;
-    else if(keys[GLFW_KEY_D]) position += right * velocity;
-    if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
-    if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
+    if(!meshMovementLocked) {
+        if(keys[GLFW_KEY_W]) position += front * velocity;
+        else if(keys[GLFW_KEY_S]) position -= front * velocity;
+        if(keys[GLFW_KEY_A]) position -= right * velocity;
+        else if(keys[GLFW_KEY_D]) position += right * velocity;
+        if(keys[GLFW_KEY_SPACE]) position += worldUp * velocity;
+        if(keys[GLFW_KEY_LEFT_CONTROL]) position -= worldUp * velocity;
     
-    if(!meshMovementLocked)
         frustum.ExtractPlanes();
+    } else {
+        if(keys[GLFW_KEY_W]) position2 += front * velocity;
+        else if(keys[GLFW_KEY_S]) position2 -= front * velocity;
+        if(keys[GLFW_KEY_A]) position2 -= right * velocity;
+        else if(keys[GLFW_KEY_D]) position2 += right * velocity;
+        if(keys[GLFW_KEY_SPACE]) position2 += worldUp * velocity;
+        if(keys[GLFW_KEY_LEFT_CONTROL]) position2 -= worldUp * velocity;
+    }
 }
 
 void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float sensitivity) {
@@ -55,7 +68,7 @@ void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float se
 
     updateCameraVectors();
 
-    if(!meshMovementLocked)
+    if(!meshMovementLocked) 
         frustum.ExtractPlanes();
 }
 
@@ -74,4 +87,12 @@ bool MainCamera::IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point
     std::array<glm::vec3, 8> points{point1, point2, point3, point4,
                                     point12, point22, point32, point42};
     return frustum.IsCubeInside(points);
+}
+
+void MainCamera::ToggleMeshMovementLock() {
+    meshMovementLocked = !meshMovementLocked;
+    if(meshMovementLocked)
+        position2 = position;
+    else
+        position = position2;
 }

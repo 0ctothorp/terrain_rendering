@@ -71,8 +71,6 @@ void LODPlane::SetUniforms() {
     shader.Use();
     GL_CHECK(glUniform1i(shader.GetUniform("tileSize"), TileGeometry::GetInstance()->tileSize));
     GL_CHECK(glUniform1f(shader.GetUniform("morphRegion"), morphRegion));
-    GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), 
-                         TileMesh::GetGlobalOffset().x, TileMesh::GetGlobalOffset().y));
     GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
                                 glm::value_ptr(projectionMatrix)));
     GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), planeWidth));
@@ -110,7 +108,6 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
     else viewMat = camera.GetViewMatrix();
     GL_CHECK(glUniformMatrix4fv(shader.GetUniform("viewMat"), 1, GL_FALSE, 
                                 glm::value_ptr(viewMat)));
-    int indicesSize = TileGeometry::GetInstance()->GetIndicesSize();
 
     for(unsigned int i = 0; i < tiles.size(); i++) {
         glUniform1i(shader.GetUniform("level"), i);
@@ -120,7 +117,8 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
                      tiles[i][j].GetLocalOffset().x, tiles[i][j].GetLocalOffset().y));
                 GL_CHECK(glUniform1i(shader.GetUniform("edgeMorph"), 
                     tiles[i][j].GetEdgeMorph()));
-                GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, indicesSize, GL_UNSIGNED_INT, 
+                GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, 
+                    TileGeometry::GetInstance()->GetIndicesSize(), GL_UNSIGNED_INT, 
                     TileGeometry::GetInstance()->GetIndicesBufferPtr()));
             } 
         }
@@ -154,5 +152,5 @@ GLuint LODPlane::GetHeightmapTexture() const {
 
 void LODPlane::ToggleMeshMovementLock(MainCamera &mainCam) {
     meshMovementLocked = !meshMovementLocked;
-    mainCam.meshMovementLocked = !mainCam.meshMovementLocked;
+    mainCam.ToggleMeshMovementLock();
 }

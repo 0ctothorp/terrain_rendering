@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <GL/glew.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "mainCamera.hpp"
 #include "edgeMorph.hpp"

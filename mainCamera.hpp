@@ -1,5 +1,8 @@
 #pragma once
 
+#include <GL/glew.h>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "camera.hpp"
 #include "window.hpp"
 #include "tileMesh.hpp"
@@ -13,6 +16,8 @@ private:
     float pitch = glm::radians(-25.0f);
     float movementSpeed = 1.0f;
     glm::vec3 worldFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 position2;
+    bool meshMovementLocked = false;
 
     void updateCameraVectors();
 public:
@@ -25,7 +30,6 @@ public:
         near,
         far
     );
-    bool meshMovementLocked = false;
 
     MainCamera(glm::vec3 position = glm::vec3(0, 20, 0));
     virtual glm::mat4 GetViewMatrix() const override;
@@ -34,4 +38,5 @@ public:
     void ChangeMovementSpeed(int change);
     bool IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
                          const glm::vec3 &point4) const;
+    void ToggleMeshMovementLock();
 };

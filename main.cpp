@@ -111,7 +111,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetScrollCallback(window, MouseScrollCallback);
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
+    // glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
 
     return window;
 }
@@ -147,6 +147,8 @@ int main(int argc, char **argv) {
 
     GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 150.0f, 0.0f));
 
+    bool lPressing = false;
+
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
@@ -171,8 +173,14 @@ int main(int argc, char **argv) {
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
-        if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+
+        if(keys[GLFW_KEY_L]) {
+            lPressing = true;
+        } else if(lPressing) {
             lodPlane.ToggleMeshMovementLock(mainCamera);    
+            lPressing = false;
+        }
+
         lodPlane.DrawFrom(mainCamera);
 
         // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));

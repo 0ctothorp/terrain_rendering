@@ -1,9 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtx/rotate_vector.hpp>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 
 class Camera {
@@ -17,20 +14,9 @@ protected:
 public:
     static constexpr float fov = 60.f;
 
-    Camera(glm::vec3 _position) 
-    : position(_position) {}
-
+    Camera(glm::vec3 _position);
     virtual glm::mat4 GetViewMatrix() const = 0;
-
-    void SetPosition(glm::vec3 pos) {
-        position = pos;
-    }
-
-    glm::vec3 GetPosition() const {
-        return position;
-    }
-
-    glm::vec3 GetFront() const {
-        return front;
-    }
+    void SetPosition(glm::vec3 pos);
+    glm::vec3 GetPosition() const;
+    glm::vec3 GetFront() const;
 };
