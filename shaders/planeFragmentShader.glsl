@@ -33,13 +33,12 @@ void main() {
     // fragColor = color;
 
     vec3 lightDirection = normalize(lightPosition - fragPos);
-    /// vec3 normal = normalize(vertexNormal);
 
     float diffuseImpact = max(dot(vertexNormal, lightDirection), 0.0f);
     vec3 lightColor = vec3(1, 1, 1);
     vec3 diffuseComponent = diffuseImpact * lightColor;
 
-    float ambientStrength = 0.3f;
+    float ambientStrength = 0.5f;
     vec3 ambient = ambientStrength * lightColor;
     fragColor = vec4((ambient + diffuseComponent) * vec3(color.x, color.y, color.z), 1.0f);
 }

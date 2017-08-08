@@ -130,19 +130,17 @@ void main() {
     globalOffsetV3 = vec3(globalOffset.x, 0, globalOffset.y);
 
     scale = int(pow(2, level));
-    vec3 position = tileSize * (scale * pos + vec3(localOffset.x, 0, localOffset.y)) 
-        + vec3(globalOffset.x, 0, globalOffset.y);
+    vec3 position = tileSize * (scale * pos + localOffsetV3) + globalOffsetV3;
     morphFactor = getMorphFactor(pos);
-    position = floor(position / scale) * scale; // snapping
-    // powoduje, że zamiast siatka płynnie przechodzić na kolejne
-    // teksele(?) i uprawiać drżenie, skacze co 'scale' wierzchołków.
 
     if(morphFactor > 0.0) {
         int scale2 = scale * 2;
         vec3 pos2 = floor(position / scale2) * scale2;
-        position = mix(position, pos2, morphFactor);        
+        position = mix(position, pos2, morphFactor);     
     }
-    // position += vec3(globalOffset.x, 0, globalOffset.y);
+
+    position = floor(position / scale) * scale;    
+
     heightmapSize = textureSize(heightmap, 0).x;
     sample_ = texture(
         heightmap, 
@@ -150,7 +148,7 @@ void main() {
             + (heightmapSize - meshSize) / 2.0f) / heightmapSize
     ).r;
     
-    position.y = sample_ * 750 /*363*/;
+    position.y = sample_ * 750;
     
     vertexNormal = getVertexNormal(position);
 

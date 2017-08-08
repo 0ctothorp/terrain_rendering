@@ -148,6 +148,8 @@ int main(int argc, char **argv) {
     GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 150.0f, 0.0f));
 
     bool lPressing = false;
+    bool rPressing = false;
+    bool wireframeMode = false;
 
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
@@ -171,7 +173,6 @@ int main(int argc, char **argv) {
         TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
 
         if(keys[GLFW_KEY_L]) {
@@ -181,9 +182,19 @@ int main(int argc, char **argv) {
             lPressing = false;
         }
 
+        if(keys[GLFW_KEY_R]) {
+            rPressing = true;
+        } else if(rPressing) {
+            wireframeMode = !wireframeMode;
+            rPressing = false;
+        }
+
+        if(wireframeMode)
+            GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         lodPlane.DrawFrom(mainCamera);
 
-        // GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        if(wireframeMode)
+            GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
         topViewFb.Bind();
         topViewFb.Draw(lodPlane, &topCam, &mainCamera);
