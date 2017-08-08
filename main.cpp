@@ -22,6 +22,8 @@
 
 bool keys[GLFW_KEY_LAST]{false};
 bool cursor = false;
+bool wireframeMode = false;
+bool meshMovementLocked = false;
 MainCamera mainCamera;
 Mouse mouse((float)Window::width / 2.0f, (float)Window::height / 2.0f, &mainCamera);
 
@@ -37,8 +39,21 @@ void KeyCallback(GLFWwindow* window, int key, int, int action, int) {
         return;
     }
 
-    if(action == GLFW_PRESS) keys[key] = true;
-    else if(action == GLFW_RELEASE) keys[key] = false;
+    if(action == GLFW_PRESS) {
+        keys[key] = true;
+        switch(key) {
+            case GLFW_KEY_R:
+                wireframeMode = !wireframeMode;
+                break;
+            case GLFW_KEY_L:
+                meshMovementLocked = !meshMovementLocked;
+                break;
+            default:
+                break; 
+        }
+    } else if(action == GLFW_RELEASE) {
+        keys[key] = false;
+    }
 }
 
 void GlfwErrorCallback(int error, const char* description) {
@@ -145,12 +160,9 @@ int main(int argc, char **argv) {
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
-    GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 150.0f, 0.0f));
+    GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 1000.0f, 0.0f));
 
-    bool lPressing = false;
-    bool rPressing = false;
-    bool wireframeMode = false;
-
+    bool prevMeshMovementLocked = meshMovementLocked;
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
@@ -175,19 +187,9 @@ int main(int argc, char **argv) {
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
 
-        if(keys[GLFW_KEY_L]) {
-            lPressing = true;
-        } else if(lPressing) {
+        if(prevMeshMovementLocked != meshMovementLocked)
             lodPlane.ToggleMeshMovementLock(mainCamera);    
-            lPressing = false;
-        }
-
-        if(keys[GLFW_KEY_R]) {
-            rPressing = true;
-        } else if(rPressing) {
-            wireframeMode = !wireframeMode;
-            rPressing = false;
-        }
+        prevMeshMovementLocked = meshMovementLocked;
 
         if(wireframeMode)
             GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));

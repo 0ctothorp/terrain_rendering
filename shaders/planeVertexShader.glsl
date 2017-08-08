@@ -41,23 +41,24 @@ int heightmapSize;
 
 float getMorphFactor(vec3 pos) {
     if(edgeMorph == EDGE_MORPH_BOTTOM && pos.z >= 1.0 - morphRegion)
-        return (pos.z - 1.0) / morphRegion + 1;
+        return (pos.z - 1.0f) / morphRegion + 1.0f;
     if(edgeMorph == EDGE_MORPH_TOP && pos.z <= morphRegion)
-        return 1 - pos.z / morphRegion;
-    if(edgeMorph == EDGE_MORPH_RIGHT && pos.x >= 1.0 - morphRegion)
-        return (pos.x - 1.0) / morphRegion + 1;
+        return 1.0f - pos.z / morphRegion;
+    if(edgeMorph == EDGE_MORPH_RIGHT && pos.x >= 1.0f - morphRegion)
+        return (pos.x - 1.0f) / morphRegion + 1.0f;
     if(edgeMorph == EDGE_MORPH_LEFT && pos.x <= morphRegion)
-        return 1 - pos.x / morphRegion;
+        return 1.0f - pos.x / morphRegion;
 
     if(edgeMorph == (EDGE_MORPH_TOP | EDGE_MORPH_RIGHT))
-        return max(max(0.0, 1 - pos.z / morphRegion), (pos.x - 1.0) / morphRegion + 1);
+        return max(max(0.0f, 1.0f - pos.z / morphRegion), (pos.x - 1.0f) / morphRegion + 1.0f);
     if(edgeMorph == (EDGE_MORPH_TOP | EDGE_MORPH_LEFT))
-        return max(max(0.0, 1 - pos.x / morphRegion), 1 - pos.z / morphRegion);
+        return max(max(0.0f, 1.0f - pos.x / morphRegion), 1 - pos.z / morphRegion);
     if(edgeMorph == (EDGE_MORPH_BOTTOM | EDGE_MORPH_LEFT))
-        return max(max(0.0, 1 - pos.x / morphRegion), (pos.z - 1.0) / morphRegion + 1);
+        return max(max(0.0f, 1.0f - pos.x / morphRegion), (pos.z - 1.0f) / morphRegion + 1);
     if(edgeMorph == (EDGE_MORPH_BOTTOM | EDGE_MORPH_RIGHT))
-        return max(max(0.0, (pos.x - 1.0) / morphRegion + 1), (pos.z - 1.0) / morphRegion + 1);
-    return 0.0;
+        return max(max(0.0f, (pos.x - 1.0f) / morphRegion + 1.0f), 
+            (pos.z - 1.0f) / morphRegion + 1.0f);
+    return 0.0f;
 }
 
 vec3 calcArbitraryVertexPosition(vec3 pos) {
@@ -66,7 +67,7 @@ vec3 calcArbitraryVertexPosition(vec3 pos) {
         heightmap, 
         (result.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
             + (heightmapSize - meshSize) / 2.0f) / heightmapSize
-    ).r * 750;
+    ).r * 750.0f;
     return result;
 }
 
@@ -103,9 +104,9 @@ vec3 getArbitraryVertexPosition(const int direction) {
 }
 
 vec3 getTriangleNormal(vec3 v1, vec3 v2, vec3 v3) {
-    vec3 edge1 = v1 - v2;
-    vec3 edge2 = v2 - v3;
-    return cross(edge1, edge2);
+    vec3 edge1 = v2 - v1;
+    vec3 edge2 = v3 - v1;
+    return normalize(cross(edge1, edge2));
 }
 
 vec3 getArbitraryTriangleNormal(const int direction1, const int direction2, vec3 position) {
@@ -131,15 +132,14 @@ void main() {
 
     scale = int(pow(2, level));
     vec3 position = tileSize * (scale * pos + localOffsetV3) + globalOffsetV3;
+    position = floor(position / scale) * scale;    
     morphFactor = getMorphFactor(pos);
 
-    if(morphFactor > 0.0) {
+    if(morphFactor > 0.0f) {
         int scale2 = scale * 2;
         vec3 pos2 = floor(position / scale2) * scale2;
         position = mix(position, pos2, morphFactor);     
     }
-
-    position = floor(position / scale) * scale;    
 
     heightmapSize = textureSize(heightmap, 0).x;
     sample_ = texture(

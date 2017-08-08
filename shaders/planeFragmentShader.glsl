@@ -25,12 +25,6 @@ void main() {
     else if(level % 4 == 2) color = blue;
     else color = yellow;
     if(morphFactor > 0) color = mix(color, vec4(1, 1, 1, 1), morphFactor);
-    float _sample = sample_ * 15;
-    // if(_sample < -32000.0) color = vec4(0, 0, 0, 1);
-    if(debug) color = mix(color, vec4(_sample, _sample, 0, 1), 0.7);
-    else color = vec4(_sample, .1, .1, 1);
-
-    // fragColor = color;
 
     vec3 lightDirection = normalize(lightPosition - fragPos);
 
@@ -38,7 +32,7 @@ void main() {
     vec3 lightColor = vec3(1, 1, 1);
     vec3 diffuseComponent = diffuseImpact * lightColor;
 
-    float ambientStrength = 0.5f;
+    float ambientStrength = 0.3f;
     vec3 ambient = ambientStrength * lightColor;
     fragColor = vec4((ambient + diffuseComponent) * vec3(color.x, color.y, color.z), 1.0f);
 }
