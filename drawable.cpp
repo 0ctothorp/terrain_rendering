@@ -2,8 +2,9 @@
 #include "glDebug.hpp"
 
 
-Drawable::Drawable(std::string vshader, std::string fshader) 
-: shader(vshader, fshader) {
+Drawable::Drawable(const std::string& vshader, const std::string& fshader, 
+                   const std::string& geomShader) 
+: shader(vshader, fshader, geomShader) {
     GL_CHECK(glGenVertexArrays(1, &vaoId));
     GL_CHECK(glGenBuffers(1, &vboId));
 }

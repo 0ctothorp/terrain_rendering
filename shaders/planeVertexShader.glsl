@@ -104,8 +104,8 @@ vec3 getArbitraryVertexPosition(const int direction) {
 }
 
 vec3 getTriangleNormal(vec3 v1, vec3 v2, vec3 v3) {
-    vec3 edge1 = v2 - v1;
-    vec3 edge2 = v3 - v1;
+    vec3 edge1 = v1 - v2;
+    vec3 edge2 = v1 - v3;
     return normalize(cross(edge1, edge2));
 }
 

@@ -7,20 +7,33 @@
 #include "glDebug.hpp"
 
 
-Shader::Shader(const std::string &vertexShaderPath, const std::string &fragmentShaderPath) {
-    std::string vertexShaderCode = LoadShaderFile(vertexShaderPath);
-    const GLchar *vertexShaderCodeGLcharPtr = vertexShaderCode.c_str();
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderCodeGLcharPtr, nullptr);
-
-    std::string fragmentShaderCode = LoadShaderFile(fragmentShaderPath);
-    const GLchar *fragmentShaderCodeGLcharPtr = fragmentShaderCode.c_str();
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderCodeGLcharPtr, nullptr);
-
+Shader::Shader(const std::string& vertexShaderPath, const std::string& fragmentShaderPath, 
+               const std::string& geomShaderPath) {
+    GLuint vertexShader = CreateShaderProgram(ShaderType_Vertex, vertexShaderPath);
+    GLuint fragmentShader = CreateShaderProgram(ShaderType_Fragment, fragmentShaderPath);
     CompileShader(vertexShader, fragmentShader);
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+}
+
+GLuint Shader::CreateShaderProgram(ShaderType_ shaderType, const std::string& shaderPath) {
+    std::string shaderCodeStr = LoadShaderFile(shaderPath);
+    const GLchar *shaderCodeGLcharPtr = shaderCodeStr.c_str();
+    GLuint shaderProgram;
+        
+    switch(shaderType) {
+    case ShaderType_Vertex:
+        shaderProgram = glCreateShader(GL_VERTEX_SHADER); break;
+    case ShaderType_Fragment:
+        shaderProgram = glCreateShader(GL_FRAGMENT_SHADER); break;
+    case ShaderType_Geometry:
+        shaderProgram = glCreateShader(GL_GEOMETRY_SHADER); break;
+    default:
+        break;
+    }
+
+    glShaderSource(shaderProgram, 1, &shaderCodeGLcharPtr, nullptr);
+    return shaderProgram;
 }
 
 Shader::~Shader() {

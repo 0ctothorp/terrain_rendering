@@ -1,6 +1,5 @@
 #include <sstream>
 #include <iomanip>
-#include <iostream>
 
 #include "cmdLineArgs.hpp"
 
@@ -23,7 +22,6 @@ std::vector<std::string> GetHeightmapsPathsFromCmdLine(const char* path, int hei
                     << latlon[3]
                     << std::setw(3) << tmplon
                     << ".hgt";
-            std::cout << sstream.str() << std::endl;
             heightmaps.push_back(sstream.str());
         }
     }

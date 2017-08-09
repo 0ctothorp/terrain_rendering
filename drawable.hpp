@@ -13,7 +13,8 @@ protected:
     Shader shader;
 
 public:
-    Drawable(std::string vshader, std::string fshader);
+    Drawable(const std::string& vshader, const std::string& fshader, 
+             const std::string& geomShader = "");
     ~Drawable();
     void BindVao();
     void UnbindVao();
