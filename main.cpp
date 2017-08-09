@@ -160,17 +160,29 @@ int main(int argc, char **argv) {
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
-    GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), 0.0f, 1000.0f, 0.0f));
+    float lightPos[3]{0, 1000, 0};
 
     bool prevMeshMovementLocked = meshMovementLocked;
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
-    bool show_test_window = true;
+    int fps = 0;
+    bool show_test_window = false;
+    double timePassed = 0;
+    bool show_info_window = true;
+    bool show_settings_window = true;
+    int infoWindowWidth = 0;
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
         deltaTime = time - prevFrameTime;
-        countFrames(frames, time, prevFrameTime);
+        timePassed += deltaTime;
+        if(timePassed >= 1.0) {
+            fps = frames;
+            frames = 0;
+            timePassed = 0;
+        }
+        frames++;
+        // countFrames(frames, time, prevFrameTime);
         prevFrameTime = time;
 
         glfwPollEvents();
@@ -179,6 +191,36 @@ int main(int argc, char **argv) {
             ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
             ImGui::ShowTestWindow(&show_test_window);
         }
+
+        ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
+        ImGuiWindowFlags infoWindowFlags = 0;
+        infoWindowFlags |= ImGuiWindowFlags_NoResize;
+        infoWindowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+        ImGui::SetNextWindowPos(ImVec2(Window::width - infoWindowWidth - 10, 10), ImGuiSetCond_Always);
+        ImGui::Begin("Info", &show_info_window, infoWindowFlags);
+        infoWindowWidth = ImGui::GetWindowWidth();
+        ImGui::Text("FPS: %d", fps);
+        ImGui::Separator();
+        ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");
+        ImGui::End();
+        
+        int settingsWindowWidth = 250;
+        ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, 95), ImGuiSetCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, 200), ImGuiSetCond_FirstUseEver);
+        ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
+        ImGuiWindowFlags settingsWindowFlags = 0;
+        ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
+        ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again to lock cursor and get back camera control.");
+        ImGui::Separator();
+        ImGui::Checkbox("Wireframe (R)", &wireframeMode);
+        ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
+        ImGui::Separator();
+        ImGui::DragFloat3("Light position", lightPos);     
+        ImGui::End();
+
+        lodPlane.shader.Use();
+        GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), lightPos[0], lightPos[1], lightPos[2]));   
 
         mainCamera.Move(keys, deltaTime);
         glm::vec3 mainCamPos = mainCamera.GetPosition();
