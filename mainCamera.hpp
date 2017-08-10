@@ -38,5 +38,5 @@ public:
     void ChangeMovementSpeed(int change);
     bool IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
                          const glm::vec3 &point4) const;
-    void ToggleMeshMovementLock();
+    void SetMeshMovementLock(bool locked);
 };

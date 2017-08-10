@@ -33,6 +33,7 @@ uniform int tileSize;
 uniform sampler2D heightmap;
 uniform int meshSize = 1024;
 uniform vec2 heightmapOffset;
+uniform bool vertexSnapping = false;
 
 vec3 localOffsetV3;
 vec3 globalOffsetV3;
@@ -104,8 +105,8 @@ vec3 getArbitraryVertexPosition(const int direction) {
 }
 
 vec3 getTriangleNormal(vec3 v1, vec3 v2, vec3 v3) {
-    vec3 edge1 = v1 - v2;
-    vec3 edge2 = v1 - v3;
+    vec3 edge1 = v2 - v1;
+    vec3 edge2 = v2 - v3;
     return normalize(cross(edge1, edge2));
 }
 
@@ -131,15 +132,17 @@ void main() {
     globalOffsetV3 = vec3(globalOffset.x, 0, globalOffset.y);
 
     scale = int(pow(2, level));
-    vec3 position = tileSize * (scale * pos + localOffsetV3) + globalOffsetV3;
-    position = floor(position / scale) * scale;    
+    vec3 position = tileSize * (scale * pos + localOffsetV3);
+    vec3 positionForNormal = position + globalOffsetV3;
+    if(vertexSnapping)
+        position = floor((position + globalOffsetV3) / float(scale)) * float(scale);
     morphFactor = getMorphFactor(pos);
 
-    if(morphFactor > 0.0f) {
-        int scale2 = scale * 2;
-        vec3 pos2 = floor(position / scale2) * scale2;
-        position = mix(position, pos2, morphFactor);     
-    }
+    int scale2 = scale * 2;
+    vec3 pos2 = floor(position / float(scale2)) * float(scale2);
+    position = mix(position, pos2, morphFactor);      
+    if(!vertexSnapping)
+        position = mix(position, pos2, morphFactor) + globalOffsetV3;           
 
     heightmapSize = textureSize(heightmap, 0).x;
     sample_ = texture(
@@ -149,8 +152,8 @@ void main() {
     ).r;
     
     position.y = sample_ * 750;
-    
-    vertexNormal = getVertexNormal(position);
+    positionForNormal.y = position.y;
+    vertexNormal = getVertexNormal(positionForNormal);
 
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     fragPos = position;

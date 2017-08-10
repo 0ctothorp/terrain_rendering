@@ -6,8 +6,7 @@ TopViewScreenQuad::TopViewScreenQuad(Framebuffer *fb)
 : Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl")
 , fb(fb) {
     SetBuffer();
-    shader.Use();
-    GL_CHECK(glUniform1i(shader.GetUniform("screenTexture"), 1));
+    shader.Uniform1i("screenTexture", 1);
 }
 
 void TopViewScreenQuad::SetBuffer() {

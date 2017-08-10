@@ -89,8 +89,8 @@ bool MainCamera::IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point
     return frustum.IsCubeInside(points);
 }
 
-void MainCamera::ToggleMeshMovementLock() {
-    meshMovementLocked = !meshMovementLocked;
+void MainCamera::SetMeshMovementLock(bool locked) {
+    meshMovementLocked = locked;
     if(meshMovementLocked)
         position2 = position;
     else

@@ -24,7 +24,6 @@ private:
     TileGeometry();
 
 public:
-    // hide it and make an accessor
     static int tileSize;
 
     ~TileGeometry();

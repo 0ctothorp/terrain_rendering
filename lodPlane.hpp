@@ -36,8 +36,11 @@ public:
         0.01f,
         2000.0f
     );
+    bool points = false;
     
-    LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth);
+    LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth,
+             const std::string& vshader, const std::string& fshader, 
+             const std::string& gshader);
     ~LODPlane();
 
     void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;

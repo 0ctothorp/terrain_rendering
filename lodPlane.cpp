@@ -9,10 +9,12 @@
 #include "hmParser.hpp"
 
 
-LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth) 
+LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth,
+                   const std::string& vshader, const std::string& fshader, 
+                   const std::string& gshader) 
 : xzOffset(0, 0)
 , planeWidth(planeWidth)
-, shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl") {
+, shader(vshader, fshader, gshader) {
     CalcLayersNumber();
     CreateTiles();
     SetUniforms();
@@ -68,17 +70,14 @@ void LODPlane::CreateTiles() {
 }
 
 void LODPlane::SetUniforms() {
-    shader.Use();
-    GL_CHECK(glUniform1i(shader.GetUniform("tileSize"), TileGeometry::GetInstance()->tileSize));
-    GL_CHECK(glUniform1f(shader.GetUniform("morphRegion"), morphRegion));
-    GL_CHECK(glUniformMatrix4fv(shader.GetUniform("projMat"), 1, GL_FALSE, 
-                                glm::value_ptr(projectionMatrix)));
-    GL_CHECK(glUniform1i(shader.GetUniform("meshSize"), planeWidth));
+    shader.Uniform1i("tileSize", TileGeometry::GetInstance()->tileSize);
+    shader.Uniform1f("morphRegion", morphRegion);
+    shader.UniformMatrix4fv("projMat", projectionMatrix);
+    shader.Uniform1i("meshSize", planeWidth);
 }
 
 void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
-    shader.Use();
-    GL_CHECK(glUniform1i(shader.GetUniform("heightmap"), 0));
+    shader.Uniform1f("heightmap", 0);
 
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));
@@ -98,29 +97,28 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
-    shader.Use();
     if(!meshMovementLocked)
-        GL_CHECK(glUniform2f(shader.GetUniform("globalOffset"), camera.GetPosition().x, 
-                            camera.GetPosition().z));
+        shader.Uniform2f("globalOffset", camera.GetPosition().x, camera.GetPosition().z);
+
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
+
     glm::mat4 viewMat;
     if(additionalCam) viewMat = additionalCam->GetViewMatrix();
     else viewMat = camera.GetViewMatrix();
-    GL_CHECK(glUniformMatrix4fv(shader.GetUniform("viewMat"), 1, GL_FALSE, 
-                                glm::value_ptr(viewMat)));
+
+    shader.UniformMatrix4fv("viewMat", viewMat);
 
     for(unsigned int i = 0; i < tiles.size(); i++) {
-        glUniform1i(shader.GetUniform("level"), i);
+        shader.Uniform1i("level", i);
         for(unsigned int j = 0; j < tiles[i].size(); j++) {
             if(IsTileInsideFrustum(i, j, camera)) {
-                GL_CHECK(glUniform2f(shader.GetUniform("localOffset"), 
-                     tiles[i][j].GetLocalOffset().x, tiles[i][j].GetLocalOffset().y));
-                GL_CHECK(glUniform1i(shader.GetUniform("edgeMorph"), 
-                    tiles[i][j].GetEdgeMorph()));
-                GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, 
+                shader.Uniform2f("localOffset", tiles[i][j].GetLocalOffset().x, 
+                                 tiles[i][j].GetLocalOffset().y);
+                shader.Uniform1i("edgeMorph", tiles[i][j].GetEdgeMorph());
+                GL_CHECK(glDrawElements(points ? GL_POINTS : GL_TRIANGLE_STRIP, 
                     TileGeometry::GetInstance()->GetIndicesSize(), GL_UNSIGNED_INT, 
                     TileGeometry::GetInstance()->GetIndicesBufferPtr()));
-            } 
+            }
         }
     }
 }
@@ -152,5 +150,5 @@ GLuint LODPlane::GetHeightmapTexture() const {
 
 void LODPlane::ToggleMeshMovementLock(MainCamera &mainCam) {
     meshMovementLocked = !meshMovementLocked;
-    mainCam.ToggleMeshMovementLock();
+    mainCam.SetMeshMovementLock(meshMovementLocked);
 }

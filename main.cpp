@@ -16,7 +16,6 @@
 #include "window.hpp"
 #include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
-#include "utils.hpp"
 #include "cmdLineArgs.hpp"
 #include "tileGeometry.hpp"
 
@@ -24,6 +23,9 @@ bool keys[GLFW_KEY_LAST]{false};
 bool cursor = false;
 bool wireframeMode = false;
 bool meshMovementLocked = false;
+bool drawTerrainNormals = false;
+bool drawTopView = false;
+bool terrainVertexSnapping = false;
 MainCamera mainCamera;
 Mouse mouse((float)Window::width / 2.0f, (float)Window::height / 2.0f, &mainCamera);
 
@@ -48,8 +50,16 @@ void KeyCallback(GLFWwindow* window, int key, int, int action, int) {
             case GLFW_KEY_L:
                 meshMovementLocked = !meshMovementLocked;
                 break;
+            case GLFW_KEY_N:
+                drawTerrainNormals = !drawTerrainNormals;
+                break;
+            case GLFW_KEY_T:
+                drawTopView = !drawTopView;
+                break;
+            case GLFW_KEY_V:
+                terrainVertexSnapping = !terrainVertexSnapping;
             default:
-                break; 
+                break;
         }
     } else if(action == GLFW_RELEASE) {
         keys[key] = false;
@@ -155,7 +165,11 @@ int main(int argc, char **argv) {
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     ImGui_ImplGlfwGL3_Init(window, false);
     
-    LODPlane lodPlane(heightmaps, planeWidth);
+    LODPlane lodPlane(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
+                      "shaders/planeFragmentShader.glsl", "");
+    LODPlane lodPlaneNormalsDebug(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
+                                  "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl");
+    lodPlaneNormalsDebug.points = true;
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
@@ -163,6 +177,7 @@ int main(int argc, char **argv) {
     float lightPos[3]{0, 1000, 0};
 
     bool prevMeshMovementLocked = meshMovementLocked;
+    bool prevTerrainVertexSnapping = terrainVertexSnapping;
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
@@ -182,7 +197,6 @@ int main(int argc, char **argv) {
             timePassed = 0;
         }
         frames++;
-        // countFrames(frames, time, prevFrameTime);
         prevFrameTime = time;
 
         glfwPollEvents();
@@ -215,12 +229,19 @@ int main(int argc, char **argv) {
         ImGui::Separator();
         ImGui::Checkbox("Wireframe (R)", &wireframeMode);
         ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
+        ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
+        ImGui::Checkbox("Draw top view (T)", &drawTopView);
+        ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
         ImGui::Separator();
         ImGui::DragFloat3("Light position", lightPos);     
         ImGui::End();
 
-        lodPlane.shader.Use();
-        GL_CHECK(glUniform3f(lodPlane.shader.GetUniform("lightPosition"), lightPos[0], lightPos[1], lightPos[2]));   
+        if(terrainVertexSnapping != prevTerrainVertexSnapping) {
+            lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+        }
+        prevTerrainVertexSnapping = terrainVertexSnapping;
+
+        lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);
 
         mainCamera.Move(keys, deltaTime);
         glm::vec3 mainCamPos = mainCamera.GetPosition();
@@ -229,25 +250,31 @@ int main(int argc, char **argv) {
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
 
-        if(prevMeshMovementLocked != meshMovementLocked)
-            lodPlane.ToggleMeshMovementLock(mainCamera);    
+        if(prevMeshMovementLocked != meshMovementLocked) {
+            lodPlane.ToggleMeshMovementLock(mainCamera);  
+            lodPlaneNormalsDebug.ToggleMeshMovementLock(mainCamera);
+        }  
         prevMeshMovementLocked = meshMovementLocked;
 
         if(wireframeMode)
             GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+
         lodPlane.DrawFrom(mainCamera);
 
+        if(drawTerrainNormals)
+            lodPlaneNormalsDebug.DrawFrom(mainCamera);
         if(wireframeMode)
             GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
-        topViewFb.Bind();
-        topViewFb.Draw(lodPlane, &topCam, &mainCamera);
-        topViewFb.Unbind();
+        if(drawTopView)
+            topViewFb.Draw(lodPlane, &topCam, &mainCamera);
 
-        GL_CHECK(glUniformMatrix4fv(lodPlane.shader.GetUniform("projMat"), 
-                                    1, GL_FALSE, glm::value_ptr(lodPlane.projectionMatrix)));
+        lodPlane.shader.UniformMatrix4fv("projMat", lodPlane.projectionMatrix);
+        lodPlaneNormalsDebug.shader.UniformMatrix4fv("projMat", 
+            lodPlaneNormalsDebug.projectionMatrix);
 
-        topViewScreenQuad.Draw();
+        if(drawTopView)
+            topViewScreenQuad.Draw();
 
         ImGui::Render();
         glfwSwapBuffers(window);
