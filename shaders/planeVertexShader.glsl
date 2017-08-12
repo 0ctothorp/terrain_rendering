@@ -134,8 +134,10 @@ void main() {
     scale = int(pow(2, level));
     vec3 position = tileSize * (scale * pos + localOffsetV3);
     vec3 positionForNormal = position + globalOffsetV3;
-    if(vertexSnapping)
+    if(vertexSnapping) {
         position = floor((position + globalOffsetV3) / float(scale)) * float(scale);
+        // positionForNormal = position;
+    }
     morphFactor = getMorphFactor(pos);
 
     int scale2 = scale * 2;

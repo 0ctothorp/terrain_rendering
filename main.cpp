@@ -1,4 +1,6 @@
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -141,6 +143,11 @@ GLFWwindow* GetGLFWwindow(const char *name){
     return window;
 }
 
+int random(int min, int max) {
+    float rand = std::rand() / (float)RAND_MAX;
+    return min + (max - min) * rand;
+}
+
 int main(int argc, char **argv) {
     int heightmapsInRow = 1;
     int planeWidth = 1024;
@@ -160,13 +167,13 @@ int main(int argc, char **argv) {
     if(argc >= 7)
         TileGeometry::tileSize = std::stoi(argv[6]);
 
-    std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
+    std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);
 
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     ImGui_ImplGlfwGL3_Init(window, false);
     
     LODPlane lodPlane(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
-                      "shaders/planeFragmentShader.glsl", "");
+                      "shaders/planeFragmentShader.glsl", "");    
     LODPlane lodPlaneNormalsDebug(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
                                   "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl");
     lodPlaneNormalsDebug.points = true;
@@ -174,8 +181,9 @@ int main(int argc, char **argv) {
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
-    float lightPos[3]{0, 1000, 0};
-
+    std::srand(std::time(0));
+    float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
+    
     bool prevMeshMovementLocked = meshMovementLocked;
     bool prevTerrainVertexSnapping = terrainVertexSnapping;
     double deltaTime = 0;
@@ -216,7 +224,7 @@ int main(int argc, char **argv) {
         infoWindowWidth = ImGui::GetWindowWidth();
         ImGui::Text("FPS: %d", fps);
         ImGui::Separator();
-        ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");
+        ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
         ImGui::End();
         
         int settingsWindowWidth = 250;
@@ -238,6 +246,7 @@ int main(int argc, char **argv) {
 
         if(terrainVertexSnapping != prevTerrainVertexSnapping) {
             lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+            lodPlaneNormalsDebug.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
         }
         prevTerrainVertexSnapping = terrainVertexSnapping;
 

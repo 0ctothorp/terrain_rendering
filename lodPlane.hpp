@@ -34,7 +34,7 @@ public:
         glm::radians(Camera::fov), 
         (float)Window::width / (float)Window::height,
         0.01f,
-        2000.0f
+        5000.0f
     );
     bool points = false;
     
