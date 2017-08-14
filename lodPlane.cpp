@@ -92,7 +92,6 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
 
     HMParser hmParser(heightmapsPaths);
-    int texSize = sqrt(heightmapsPaths.size());
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, hmParser.GetTotalWidth(), 
                           hmParser.GetTotalWidth(), 0, GL_RED, GL_SHORT, 
                           hmParser.GetDataPtr()->data()));
@@ -106,13 +105,10 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    // GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 4));
     GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE));
-    
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, hmParser.GetTotalWidth(), 
-                          hmParser.GetTotalWidth(), 0, GL_RGB, GL_UNSIGNED_BYTE, 
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 512, 512, 0, GL_RGB, GL_FLOAT, 
                           hmParser.GetNormalsPtr()->data()));
-                          
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {

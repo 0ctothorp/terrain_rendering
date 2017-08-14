@@ -20,7 +20,7 @@ public:
 
     void SetBufferData() {
         float screenRatio = (float)Window::width / (float)Window::height;
-        float xsize = 0.7f;
+        float xsize = 0.6f;
         float ysize = xsize * screenRatio;
         float minus = 0.65f;
         GLfloat viewQuad[] {

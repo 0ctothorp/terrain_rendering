@@ -20,7 +20,7 @@ private:
 
     int totalWidth;
     std::vector<short> data;
-    std::vector<short> normals;
+    std::vector<float> normals;
     std::vector<std::ifstream> heightmapFiles;
     const std::vector<std::string> heightmapPaths;
 
@@ -39,6 +39,6 @@ public:
     
     HMParser(const std::vector<std::string>& heightmaps);
     std::vector<short>* GetDataPtr();
-    std::vector<short>* GetNormalsPtr();
+    std::vector<float>* GetNormalsPtr();
     int GetTotalWidth();
 };

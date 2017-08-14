@@ -89,7 +89,8 @@ glm::vec3 HMParser::GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p
 }
 
 static float GetHeight(short h) {
-    return ((float)h / 32768.0f) * 750.0f;
+    // return (((float)h / 32767.0f + 1.0f) / 2.0f) * 750.0f;
+    return h;
 }
 
 glm::vec3 HMParser::GetPointTo(glm::vec3 point, PointTo_ pointTo) {
@@ -159,9 +160,9 @@ glm::vec3 HMParser::GetTriangleNormalTo(glm::vec3 point, PointTo_ dir) {
 }
 
 void HMParser::CalculateNormals() {
-    normals.resize(data.size() * 3);
-    for(int i = 0; i < totalWidth; i++) {
-        for(int j = 0; j < totalWidth; j++) {
+    int step = (totalWidth) / 512.0f;
+    for(int i = 0; i < totalWidth; i += step) {
+        for(int j = 0; j < totalWidth; j += step) {
             short pixel = data[totalWidth * i + j];
             glm::vec3 point = glm::vec3(i, GetHeight(swapBytes(pixel)), j);
             // std::cout << point.x << ", " << point.y << ", " << point.z << std::endl;
@@ -205,12 +206,12 @@ void HMParser::CalculateNormals() {
                 glm::vec3 n4 = GetTriangleNormalTo(point, PointTo_Bottom);
                 glm::vec3 n5 = GetTriangleNormalTo(point, PointTo_BottomLeft);
                 glm::vec3 n6 = GetTriangleNormalTo(point, PointTo_TopLeft);
-                normal = glm::normalize(n1 + n2 + n3 + n4 + n5 + n6);                
+                normal = glm::normalize(n1 + n2 + n3 + n4 + n5 + n6);
             } 
             // std::cout << normal.x << ", " << normal.y << ", " << normal.z << std::endl;
-            normals[(i * totalWidth + j) * 3] = normal.x * 127;
-            normals[(i * totalWidth + j) * 3 + 1] = normal.y * 127;
-            normals[(i * totalWidth + j) * 3 + 2] = normal.z * 127;
+            normals.push_back(normal.x);
+            normals.push_back(normal.y);
+            normals.push_back(normal.z);
             // std::cout << normals[(i * totalWidth + j) * 3] << ", " << normals[(i * totalWidth + j) * 3 + 1] 
             //           << ", " << normals[(i * totalWidth + j) * 3 + 2] << std::endl;            
         }
@@ -221,7 +222,7 @@ short HMParser::swapBytes(short s) {
     return (s << 8) | (s >> 8);
 }
 
-std::vector<short>* HMParser::GetNormalsPtr() {
+std::vector<float>* HMParser::GetNormalsPtr() {
     return &normals;
 }
 
