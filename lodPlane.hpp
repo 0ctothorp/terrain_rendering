@@ -15,11 +15,13 @@
 class LODPlane {
 private:
     GLuint heightmapTex;
+    GLuint normalMapTex;
     std::vector< std::vector<TileMesh> > tiles;
     int layers;
     glm::vec2 xzOffset;
     int planeWidth;
     bool meshMovementLocked = false;
+    bool points = false;
 
     void CalcLayersNumber();
     void CreateTiles();
@@ -36,14 +38,15 @@ public:
         0.01f,
         5000.0f
     );
-    bool points = false;
     
     LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth,
              const std::string& vshader, const std::string& fshader, 
-             const std::string& gshader);
+             const std::string& gshader, bool points = false);
     ~LODPlane();
 
     void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;
     GLuint GetHeightmapTexture() const;
     void ToggleMeshMovementLock(MainCamera &mainCam);
+    GLuint GetNormalMapTex();
+    GLuint GetHeightmapTex();
 };

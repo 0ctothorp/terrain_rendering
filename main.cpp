@@ -20,6 +20,8 @@
 #include "topViewScreenQuad.hpp"
 #include "cmdLineArgs.hpp"
 #include "tileGeometry.hpp"
+#include "normalMapQuad.hpp"
+
 
 bool keys[GLFW_KEY_LAST]{false};
 bool cursor = false;
@@ -134,6 +136,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     GL_CHECK(glEnable(GL_DEPTH_TEST));
     GL_CHECK(glEnable(GL_BLEND));
     GL_CHECK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    glEnable(GL_DEBUG_OUTPUT);
 
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
@@ -170,16 +173,18 @@ int main(int argc, char **argv) {
     std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);
 
     auto window = GetGLFWwindow("OpenGL terrain rendering");
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
     ImGui_ImplGlfwGL3_Init(window, false);
     
     LODPlane lodPlane(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
-                      "shaders/planeFragmentShader.glsl", "");    
+                      "shaders/planeFragmentShader.glsl", "");
     LODPlane lodPlaneNormalsDebug(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
-                                  "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl");
-    lodPlaneNormalsDebug.points = true;
+                                  "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl", true);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
+
+    NormalMapQuad nmq(lodPlane.GetNormalMapTex());
 
     std::srand(std::time(0));
     float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
@@ -190,7 +195,6 @@ int main(int argc, char **argv) {
     double prevFrameTime = glfwGetTime();
     int frames = 0;
     int fps = 0;
-    bool show_test_window = false;
     double timePassed = 0;
     bool show_info_window = true;
     bool show_settings_window = true;
@@ -209,48 +213,53 @@ int main(int argc, char **argv) {
 
         glfwPollEvents();
         ImGui_ImplGlfwGL3_NewFrame();
-        if (show_test_window) {
-            ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-            ImGui::ShowTestWindow(&show_test_window);
-        }
 
-        ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
-        ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
-        ImGuiWindowFlags infoWindowFlags = 0;
-        infoWindowFlags |= ImGuiWindowFlags_NoResize;
-        infoWindowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-        ImGui::SetNextWindowPos(ImVec2(Window::width - infoWindowWidth - 10, 10), ImGuiSetCond_Always);
-        ImGui::Begin("Info", &show_info_window, infoWindowFlags);
-        infoWindowWidth = ImGui::GetWindowWidth();
-        ImGui::Text("FPS: %d", fps);
-        ImGui::Separator();
-        ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
-        ImGui::End();
+        {
+            ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
+            ImGuiWindowFlags infoWindowFlags = 0;
+            infoWindowFlags |= ImGuiWindowFlags_NoResize;
+            infoWindowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+            ImGui::SetNextWindowPos(ImVec2(Window::width - infoWindowWidth - 10, 10), ImGuiSetCond_Always);
+            ImGui::Begin("Info", &show_info_window, infoWindowFlags);
+            infoWindowWidth = ImGui::GetWindowWidth();
+            ImGui::Text("FPS: %d", fps);
+            ImGui::Separator();
+            ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
+            ImGui::End();
+        }
         
         int settingsWindowWidth = 250;
-        ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, 95), ImGuiSetCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, 200), ImGuiSetCond_FirstUseEver);
-        ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
-        ImGuiWindowFlags settingsWindowFlags = 0;
-        ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
-        ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again to lock cursor and get back camera control.");
-        ImGui::Separator();
-        ImGui::Checkbox("Wireframe (R)", &wireframeMode);
-        ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
-        ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
-        ImGui::Checkbox("Draw top view (T)", &drawTopView);
-        ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
-        ImGui::Separator();
-        ImGui::DragFloat3("Light position", lightPos);     
-        ImGui::End();
+        {
+            ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, 95), ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, 200), ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
+            ImGuiWindowFlags settingsWindowFlags = 0;
+            ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
+            ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again to lock cursor and get back camera control.");
+            ImGui::Separator();
+            ImGui::Checkbox("Wireframe (R)", &wireframeMode);
+            ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
+            ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
+            ImGui::Checkbox("Draw top view (T)", &drawTopView);
+            ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
+            ImGui::Separator();
+            ImGui::DragFloat3("Light position", lightPos);     
+            ImGui::End();
+        }
+        
+        // {
+        //     ImGui::Begin("Normal map");
+        //     GLuint tex = lodPlane.GetNormalMapTex();
+        //     ImGui::Image(&tex, ImVec2(256, 256));
+        //     ImGui::End();
+        // }
 
         if(terrainVertexSnapping != prevTerrainVertexSnapping) {
             lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
             lodPlaneNormalsDebug.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
         }
         prevTerrainVertexSnapping = terrainVertexSnapping;
-
-        lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);
 
         mainCamera.Move(keys, deltaTime);
         glm::vec3 mainCamPos = mainCamera.GetPosition();
@@ -285,7 +294,10 @@ int main(int argc, char **argv) {
         if(drawTopView)
             topViewScreenQuad.Draw();
 
+        nmq.Draw();
+
         ImGui::Render();
+        lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        
         glfwSwapBuffers(window);
     }
 

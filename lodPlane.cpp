@@ -11,10 +11,11 @@
 
 LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth,
                    const std::string& vshader, const std::string& fshader, 
-                   const std::string& gshader) 
+                   const std::string& gshader, bool points) 
 : xzOffset(0, 0)
 , planeWidth(planeWidth)
-, shader(vshader, fshader, gshader) {
+, shader(vshader, fshader, gshader)
+, points(points) {
     CalcLayersNumber();
     CreateTiles();
     SetUniforms();
@@ -23,6 +24,7 @@ LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWid
 
 LODPlane::~LODPlane() {
     GL_CHECK(glDeleteTextures(1, &heightmapTex));
+    GL_CHECK(glDeleteTextures(1, &normalMapTex));
 }
 
 void LODPlane::CalcLayersNumber() {
@@ -77,7 +79,7 @@ void LODPlane::SetUniforms() {
 }
 
 void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
-    shader.Uniform1f("heightmap", 0);
+    shader.Uniform1i("heightmap", 0);
 
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));
@@ -91,9 +93,26 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
 
     HMParser hmParser(heightmapsPaths);
     int texSize = sqrt(heightmapsPaths.size());
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, (hmParser.width - 1) * texSize, 
-                          (hmParser.width - 1) * texSize, 0, GL_RED, GL_SHORT, 
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, hmParser.GetTotalWidth(), 
+                          hmParser.GetTotalWidth(), 0, GL_RED, GL_SHORT, 
                           hmParser.GetDataPtr()->data()));
+    
+    if(points) return;
+    
+    GL_CHECK(glGenTextures(1, &normalMapTex));
+    GL_CHECK(glActiveTexture(GL_TEXTURE2));    
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, normalMapTex));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE));
+    
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, hmParser.GetTotalWidth(), 
+                          hmParser.GetTotalWidth(), 0, GL_RGB, GL_UNSIGNED_BYTE, 
+                          hmParser.GetNormalsPtr()->data()));
+                          
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
@@ -151,4 +170,12 @@ GLuint LODPlane::GetHeightmapTexture() const {
 void LODPlane::ToggleMeshMovementLock(MainCamera &mainCam) {
     meshMovementLocked = !meshMovementLocked;
     mainCam.SetMeshMovementLock(meshMovementLocked);
+}
+
+GLuint LODPlane::GetNormalMapTex() {
+    return normalMapTex;
+}
+
+GLuint LODPlane::GetHeightmapTex() {
+    return heightmapTex;
 }

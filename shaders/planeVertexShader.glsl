@@ -31,6 +31,7 @@ uniform vec2 globalOffset;
 uniform int level = 0;
 uniform int tileSize;
 uniform sampler2D heightmap;
+uniform sampler2D normalMap;
 uniform int meshSize = 1024;
 uniform vec2 heightmapOffset;
 uniform bool vertexSnapping = false;
@@ -155,7 +156,9 @@ void main() {
     
     position.y = sample_ * 750;
     positionForNormal.y = position.y;
-    vertexNormal = getVertexNormal(positionForNormal);
+    vertexNormal = /* getVertexNormal(positionForNormal); */ 
+        (texture(normalMap, (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
+        + (heightmapSize - meshSize) / 2.0f) / heightmapSize).xyz);
 
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     fragPos = position;
