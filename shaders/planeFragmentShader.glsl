@@ -4,11 +4,13 @@ in float morphFactor;
 in float sample_;
 in vec3 fragPos;
 in vec3 vertexNormal;
+in vec2 uv;
 
 out vec4 fragColor;
 
 uniform int level;
 uniform sampler2D heightmap;
+// uniform sampler2D normalMap;
 uniform bool debug = true;
 uniform int meshSize;
 uniform vec3 lightPosition;
@@ -35,4 +37,6 @@ void main() {
     float ambientStrength = 0.1f;
     vec3 ambient = ambientStrength * lightColor;
     fragColor = vec4((ambient + diffuseComponent) * vec3(color.x, color.y, color.z), 1.0f);
+
+    // if(length(vertexNormal) >= 0.01f) fragColor = vec4(1, 0.5, 0.25, 1);
 }

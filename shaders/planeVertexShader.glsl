@@ -21,6 +21,7 @@ out float morphFactor;
 out float sample_;
 out vec3 fragPos;
 out vec3 vertexNormal;
+out vec2 uv;
 
 uniform mat4 projMat;
 uniform mat4 viewMat;
@@ -148,19 +149,14 @@ void main() {
         position = mix(position, pos2, morphFactor) + globalOffsetV3;           
 
     heightmapSize = textureSize(heightmap, 0).x;
-    sample_ = texture(
-        heightmap, 
-        (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
-            + (heightmapSize - meshSize) / 2.0f) / heightmapSize
-    ).r;
+    uv = (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) + (heightmapSize - meshSize) 
+        / 2.0f) / heightmapSize;
+    sample_ = texture(heightmap, uv).r;
     
     position.y = sample_ * 750;
     positionForNormal.y = position.y;
-    vertexNormal = /* getVertexNormal(positionForNormal); */ 
-        texture2D(normalMap, (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
-        + (heightmapSize - meshSize) / 2.0f) / heightmapSize).rgb;
-    // float len = length(vertexNormal);
-    // if(len > 1.1f || len < 0.9f) vertexNormal = vec3(0, 1, 0);
+    vertexNormal = texture(normalMap, uv).rgb;
+    
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     fragPos = position;
 }

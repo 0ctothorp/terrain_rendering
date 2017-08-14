@@ -9,7 +9,7 @@ private:
     GLuint textureId;
 public:
     NormalMapQuad(GLuint texId) 
-    : Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl")
+    : Drawable("shaders/framebufferVertexShader.glsl", "shaders/normalQuadFragment.glsl")
     , textureId(texId) {
         BindVbo();
         SetBufferData();

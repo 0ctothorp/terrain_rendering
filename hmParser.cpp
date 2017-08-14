@@ -89,46 +89,40 @@ glm::vec3 HMParser::GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p
 }
 
 static float GetHeight(short h) {
-    // return (((float)h / 32767.0f + 1.0f) / 2.0f) * 750.0f;
-    return h;
+    return (((float)h / 32767.0f + 1.0f) / 2.0f) * 750.0f;
+    // return h;
+    // return (float)h / 32767.0f * 750.0f;
 }
 
 glm::vec3 HMParser::GetPointTo(glm::vec3 point, PointTo_ pointTo) {
+    short pixel;
     switch(pointTo) {
-    case PointTo_Bottom: {
-        short pixel = data[totalWidth * (point.z + 1) + point.x];
+    case PointTo_Bottom:
+        pixel = data[totalWidth * (point.z + 1) + point.x];
         return glm::vec3(point.x, GetHeight(swapBytes(pixel)), point.z + 1);
-    }
-    case PointTo_BottomLeft: {
-        short pixel = data[totalWidth * (point.z + 1) + (point.x - 1)];
+    case PointTo_BottomLeft:
+        pixel = data[totalWidth * (point.z + 1) + (point.x - 1)];
         return glm::vec3(point.x - 1, GetHeight(swapBytes(pixel)), point.z + 1);
-    }
-    case PointTo_BottomRight: {
-        short pixel = data[totalWidth * (point.z + 1) + point.x + 1];
+    case PointTo_BottomRight:
+        pixel = data[totalWidth * (point.z + 1) + point.x + 1];
         return glm::vec3(point.x + 1, GetHeight(swapBytes(pixel)), point.z + 1);
-    }
-    case PointTo_Left: {
-        short pixel = data[totalWidth * point.z + point.x - 1];
+    case PointTo_Left:
+        pixel = data[totalWidth * point.z + point.x - 1];
         return glm::vec3(point.x - 1, GetHeight(swapBytes(pixel)), point.z);
-    }
-    case PointTo_Right: {
-        short pixel = data[totalWidth * point.z + point.x + 1];
+    case PointTo_Right:
+        pixel = data[totalWidth * point.z + point.x + 1];
         return glm::vec3(point.x + 1, GetHeight(swapBytes(pixel)), point.z);
-    }
-    case PointTo_Top: {
-        short pixel = data[totalWidth * (point.z - 1) + point.x];
+    case PointTo_Top:
+        pixel = data[totalWidth * (point.z - 1) + point.x];
         return glm::vec3(point.x, GetHeight(swapBytes(pixel)), point.z - 1);
-    }
-    case PointTo_TopLeft: {
-        short pixel = data[totalWidth * (point.z - 1) + point.x - 1];
+    case PointTo_TopLeft:
+        pixel = data[totalWidth * (point.z - 1) + point.x - 1];
         return glm::vec3(point.x - 1, GetHeight(swapBytes(pixel)), point.z - 1);
-    }
-    case PointTo_TopRight: {
-        short pixel = data[totalWidth * (point.z - 1) + point.x + 1];
+    case PointTo_TopRight:
+        pixel = data[totalWidth * (point.z - 1) + point.x + 1];
         return glm::vec3(point.x + 1, GetHeight(swapBytes(pixel)), point.z - 1);
-    }
     default:
-        break;
+        throw "Wrong direction";
     }
 }
 
@@ -160,10 +154,10 @@ glm::vec3 HMParser::GetTriangleNormalTo(glm::vec3 point, PointTo_ dir) {
 }
 
 void HMParser::CalculateNormals() {
-    int step = (totalWidth) / 512.0f;
+    int step = /* (totalWidth) / 512.0f */ 1;
     for(int i = 0; i < totalWidth; i += step) {
         for(int j = 0; j < totalWidth; j += step) {
-            short pixel = data[totalWidth * i + j];
+            short pixel = data[totalWidth * j + i];
             glm::vec3 point = glm::vec3(i, GetHeight(swapBytes(pixel)), j);
             // std::cout << point.x << ", " << point.y << ", " << point.z << std::endl;
             glm::vec3 normal;
