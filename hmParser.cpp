@@ -9,7 +9,8 @@
 HMParser::HMParser(const std::vector<std::string>& heightmaps) 
 : totalWidth((width - 1) * sqrt(heightmaps.size())) // z jakiegoś powodu ta inicjalizacja nie działa
 , heightmapFiles(heightmaps.size()) 
-, heightmapPaths(heightmaps) {
+, heightmapPaths(heightmaps)
+, highestPoint(-750) {
     int i = 0;
     for(auto& hmFile: heightmapFiles) {
         hmFile.exceptions(std::ifstream::badbit | std::ifstream::failbit);
@@ -21,10 +22,7 @@ HMParser::HMParser(const std::vector<std::string>& heightmaps)
     totalWidth = (width - 1) * sqrt(heightmaps.size());
     std::cerr << "totalWidth: " << totalWidth << "\n";    
     CalculateNormals();
-    // for(int i = 0; i < normals.size(); i++) {
-    //     std::cout << (int)normals[i] << ", ";
-    // }
-    // std::cout << std::endl;
+    std::cout << "hp: " << highestPoint << '\n';
 }
 
 void HMParser::TryToOpenAFile(const std::string& path, std::ifstream& stream) {
@@ -89,8 +87,8 @@ glm::vec3 HMParser::GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p
 }
 
 static float GetHeight(short h) {
-    return (((float)h / 32767.0f + 1.0f) / 2.0f) * 750.0f;
-    // return h;
+    // return (((float)h / 32767.0f + 1.0f) / 2.0f) * 750.0f;
+    return (float)h / 40.0f;
     // return (float)h / 32767.0f * 750.0f;
 }
 
@@ -154,12 +152,12 @@ glm::vec3 HMParser::GetTriangleNormalTo(glm::vec3 point, PointTo_ dir) {
 }
 
 void HMParser::CalculateNormals() {
-    int step = /* (totalWidth) / 512.0f */ 1;
-    for(int i = 0; i < totalWidth; i += step) {
-        for(int j = 0; j < totalWidth; j += step) {
+    for(int j = 0; j < totalWidth; j++) {
+        for(int i = 0; i < totalWidth; i++) {
             short pixel = data[totalWidth * j + i];
-            glm::vec3 point = glm::vec3(i, GetHeight(swapBytes(pixel)), j);
-            // std::cout << point.x << ", " << point.y << ", " << point.z << std::endl;
+            float height = GetHeight(swapBytes(pixel));
+            if(height > highestPoint) highestPoint = height;
+            glm::vec3 point = glm::vec3(i, height, j);
             glm::vec3 normal;
             if(i == 0 && j == 0) {
                 normal = GetTriangleNormalTo(point, PointTo_BottomRight);
@@ -222,4 +220,8 @@ std::vector<float>* HMParser::GetNormalsPtr() {
 
 int HMParser::GetTotalWidth() {
     return totalWidth;
+}
+
+float HMParser::GetHighestPoint() {
+    return highestPoint;
 }

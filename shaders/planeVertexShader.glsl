@@ -17,6 +17,10 @@ const int DIR_LEFTDOWN = 5;
 const int DIR_RIGHT = 6;
 const int DIR_LEFT = 7;
 
+const int LIGHT_PRECALC_NORMALS = 0;
+const int LIGHT_LIVECALC_NORMALS = 1;
+const int LIGHT_NONE = 2;
+
 out float morphFactor;
 out float sample_;
 out vec3 fragPos;
@@ -31,11 +35,13 @@ uniform vec2 localOffset;
 uniform vec2 globalOffset;
 uniform int level = 0;
 uniform int tileSize;
-uniform sampler2D heightmap;
+uniform isampler2D heightmap;
 uniform sampler2D normalMap;
 uniform int meshSize = 1024;
 uniform vec2 heightmapOffset;
 uniform bool vertexSnapping = false;
+uniform int lightType = LIGHT_NONE;
+uniform float highestPoint;
 
 vec3 localOffsetV3;
 vec3 globalOffsetV3;
@@ -107,8 +113,8 @@ vec3 getArbitraryVertexPosition(const int direction) {
 }
 
 vec3 getTriangleNormal(vec3 v1, vec3 v2, vec3 v3) {
-    vec3 edge1 = v2 - v1;
-    vec3 edge2 = v2 - v3;
+    vec3 edge1 = v2 - v3;
+    vec3 edge2 = v1 - v3;
     return normalize(cross(edge1, edge2));
 }
 
@@ -138,7 +144,7 @@ void main() {
     vec3 positionForNormal = position + globalOffsetV3;
     if(vertexSnapping) {
         position = floor((position + globalOffsetV3) / float(scale)) * float(scale);
-        // positionForNormal = position;
+        positionForNormal = position;
     }
     morphFactor = getMorphFactor(pos);
 
@@ -151,11 +157,14 @@ void main() {
     heightmapSize = textureSize(heightmap, 0).x;
     uv = (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) + (heightmapSize - meshSize) 
         / 2.0f) / heightmapSize;
-    sample_ = texture(heightmap, uv).r;
+    sample_ = texture(heightmap, uv).r / 40.0f;
     
-    position.y = sample_ * 750;
+    position.y = sample_;
     positionForNormal.y = position.y;
-    vertexNormal = texture(normalMap, uv).rgb;
+    vertexNormal = 
+        lightType == LIGHT_PRECALC_NORMALS ? texture(normalMap, uv).rgb : 
+            lightType == LIGHT_LIVECALC_NORMALS ? getVertexNormal(positionForNormal) :
+                vec3(0, 0, 0);
     
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     fragPos = position;

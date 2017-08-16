@@ -16,6 +16,7 @@ class LODPlane {
 private:
     GLuint heightmapTex;
     GLuint normalMapTex;
+    GLuint terrainColorsTex;
     std::vector< std::vector<TileMesh> > tiles;
     int layers;
     glm::vec2 xzOffset;

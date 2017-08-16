@@ -29,7 +29,7 @@ bool wireframeMode = false;
 bool meshMovementLocked = false;
 bool drawTerrainNormals = false;
 bool drawTopView = false;
-bool terrainVertexSnapping = false;
+bool terrainVertexSnapping = true;
 MainCamera mainCamera;
 Mouse mouse((float)Window::width / 2.0f, (float)Window::height / 2.0f, &mainCamera);
 
@@ -186,6 +186,9 @@ int main(int argc, char **argv) {
 
     NormalMapQuad nmq(lodPlane.GetNormalMapTex());
 
+    lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+    lodPlaneNormalsDebug.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+
     std::srand(std::time(0));
     float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
     
@@ -199,6 +202,11 @@ int main(int argc, char **argv) {
     bool show_info_window = true;
     bool show_settings_window = true;
     int infoWindowWidth = 0;
+
+    enum Light_ {Light_PrecalcNormals, Light_LivecalcNormals, Light_None};
+    int lightingType = Light_None;
+    int prevLightingType = lightingType;
+
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
         deltaTime = time - prevFrameTime;
@@ -236,24 +244,39 @@ int main(int argc, char **argv) {
             ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
             ImGuiWindowFlags settingsWindowFlags = 0;
             ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
-            ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again to lock cursor and get back camera control.");
+            ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again "
+                                "to lock cursor and get back camera control.");
+
             ImGui::Separator();
+
             ImGui::Checkbox("Wireframe (R)", &wireframeMode);
             ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
             ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
             ImGui::Checkbox("Draw top view (T)", &drawTopView);
             ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
+
             ImGui::Separator();
+
+            ImGui::Text("Lighting");
             ImGui::DragFloat3("Light position", lightPos);     
+            ImGui::RadioButton("Precalculated normals", &lightingType, Light_PrecalcNormals);
+            ImGui::RadioButton("Live calculated normals", &lightingType, Light_LivecalcNormals);
+            ImGui::RadioButton("No normals (no light)", &lightingType, Light_None);
+
             ImGui::End();
         }
-        
-        // {
-        //     ImGui::Begin("Normal map");
-        //     GLuint tex = lodPlane.GetNormalMapTex();
-        //     ImGui::Image(&tex, ImVec2(256, 256));
-        //     ImGui::End();
-        // }
+
+        if(lightingType == Light_PrecalcNormals && lightingType != prevLightingType) {
+            terrainVertexSnapping = true;
+        } else if(lightingType == Light_LivecalcNormals && lightingType != prevLightingType) {
+            terrainVertexSnapping = false;
+        } else if(lightingType != prevLightingType) {
+            terrainVertexSnapping = true;
+        } 
+        prevLightingType = lightingType;
+
+        lodPlane.shader.Uniform1i("lightType", lightingType);
+        lodPlaneNormalsDebug.shader.Uniform1i("lightType", lightingType);
 
         if(terrainVertexSnapping != prevTerrainVertexSnapping) {
             lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
@@ -294,7 +317,7 @@ int main(int argc, char **argv) {
         if(drawTopView)
             topViewScreenQuad.Draw();
 
-        nmq.Draw();
+        // nmq.Draw();
 
         ImGui::Render();
         lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        

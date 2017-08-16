@@ -23,6 +23,7 @@ private:
     std::vector<float> normals;
     std::vector<std::ifstream> heightmapFiles;
     const std::vector<std::string> heightmapPaths;
+    float highestPoint;
 
     void TryToOpenAFile(const std::string& path, std::ifstream& stream);
     void ParseHeightmaps();
@@ -41,4 +42,5 @@ public:
     std::vector<short>* GetDataPtr();
     std::vector<float>* GetNormalsPtr();
     int GetTotalWidth();
+    float GetHighestPoint();
 };
