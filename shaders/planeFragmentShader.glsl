@@ -7,7 +7,6 @@ const int LIGHT_NONE = 2;
 const int MAX_H = 750;
 
 in float morphFactor;
-in float sample_;
 in vec3 fragPos;
 in vec3 vertexNormal;
 in vec2 uv;
@@ -36,12 +35,10 @@ void main() {
         else if(level % 4 == 2) color = blue;
         else color = yellow;
         if(morphFactor > 0) color = mix(color, vec4(1, 1, 1, 1), morphFactor);
+    } else {
+        color = texture(terrainColors, fragPos.y / 35.0f);        
     }
     
-    // color = vec4(mix(vec3(.25, .25, .25), vec3(1, 1, 1), fragPos.y / highestPoint), 1.0f);
-    // if(fragPos.y <= highestPoint && fragPos.y >= highestPoint - 50) color = vec4(1, 0, 1, 1);
-    color = texture(terrainColors, fragPos.y / 35.0f);
-
     if(lightType != LIGHT_NONE) {
         vec3 lightDirection = normalize(lightPosition - fragPos);
 

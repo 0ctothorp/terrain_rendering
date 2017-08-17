@@ -202,6 +202,8 @@ int main(int argc, char **argv) {
     bool show_info_window = true;
     bool show_settings_window = true;
     int infoWindowWidth = 0;
+    bool debugColors = false;
+    bool prevDebugColors = debugColors;
 
     enum Light_ {Light_PrecalcNormals, Light_LivecalcNormals, Light_None};
     int lightingType = Light_None;
@@ -254,6 +256,7 @@ int main(int argc, char **argv) {
             ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
             ImGui::Checkbox("Draw top view (T)", &drawTopView);
             ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
+            ImGui::Checkbox("Color mesh levels", &debugColors);
 
             ImGui::Separator();
 
@@ -266,10 +269,15 @@ int main(int argc, char **argv) {
             ImGui::End();
         }
 
+        if(debugColors != prevDebugColors) {
+            lodPlane.shader.Uniform1i("debug", (int)debugColors);
+        }
+        prevDebugColors = debugColors;
+
         if(lightingType == Light_PrecalcNormals && lightingType != prevLightingType) {
             terrainVertexSnapping = true;
         } else if(lightingType == Light_LivecalcNormals && lightingType != prevLightingType) {
-            terrainVertexSnapping = false;
+            terrainVertexSnapping = true;
         } else if(lightingType != prevLightingType) {
             terrainVertexSnapping = true;
         } 

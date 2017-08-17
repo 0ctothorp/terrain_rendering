@@ -110,8 +110,8 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 2));
-    GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    // GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
 
     HMParser hmParser(heightmapsPaths);
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, hmParser.GetTotalWidth(), 

@@ -76,7 +76,7 @@ vec3 calcArbitraryVertexPosition(vec3 pos) {
         heightmap, 
         (result.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) 
             + (heightmapSize - meshSize) / 2.0f) / heightmapSize
-    ).r * 750.0f;
+    ).r / 40.0f;
     return result;
 }
 
@@ -144,7 +144,6 @@ void main() {
     vec3 positionForNormal = position + globalOffsetV3;
     if(vertexSnapping) {
         position = floor((position + globalOffsetV3) / float(scale)) * float(scale);
-        positionForNormal = position;
     }
     morphFactor = getMorphFactor(pos);
 
@@ -157,7 +156,7 @@ void main() {
     heightmapSize = textureSize(heightmap, 0).x;
     uv = (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) + (heightmapSize - meshSize) 
         / 2.0f) / heightmapSize;
-    sample_ = texture(heightmap, uv).r / 40.0f;
+    sample_ = texture(heightmap, uv).r / 50.0f;
     
     position.y = sample_;
     positionForNormal.y = position.y;

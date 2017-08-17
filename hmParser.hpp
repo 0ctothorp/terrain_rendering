@@ -27,13 +27,15 @@ private:
 
     void TryToOpenAFile(const std::string& path, std::ifstream& stream);
     void ParseHeightmaps();
-    void TryToReadAFile(int heightmapsInRow, int row, int positionInRow);
+    void TryToReadRowOfDataFromFile(int heightmapsInRow, int row, int positionInRow);
     void CloseFiles();
     void CalculateNormals();
     glm::vec3 GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p2);
     glm::vec3 GetPointTo(glm::vec3 point, PointTo_ pointTo);
     short swapBytes(short s);
     glm::vec3 GetTriangleNormalTo(glm::vec3 point, PointTo_ dir);
+    std::vector< std::vector<glm::vec3> > CalculateTriangleNormals();
+    void SwapBytesForAllValuesInHeightmap();
 
 public:
     const int width = 1201;
