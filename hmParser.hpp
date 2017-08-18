@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 
+#include <glm/glm.hpp>
+
 
 class HMParser {
 private:
@@ -20,7 +22,7 @@ private:
 
     int totalWidth;
     std::vector<short> data;
-    std::vector<float> normals;
+    std::vector<char> normals;
     std::vector<std::ifstream> heightmapFiles;
     const std::vector<std::string> heightmapPaths;
     float highestPoint;
@@ -42,7 +44,7 @@ public:
     
     HMParser(const std::vector<std::string>& heightmaps);
     std::vector<short>* GetDataPtr();
-    std::vector<float>* GetNormalsPtr();
+    std::vector<char>* GetNormalsPtr();
     int GetTotalWidth();
     float GetHighestPoint();
 };

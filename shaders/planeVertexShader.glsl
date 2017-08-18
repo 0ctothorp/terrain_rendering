@@ -161,7 +161,7 @@ void main() {
     position.y = sample_;
     positionForNormal.y = position.y;
     vertexNormal = 
-        lightType == LIGHT_PRECALC_NORMALS ? texture(normalMap, uv).rgb : 
+        lightType == LIGHT_PRECALC_NORMALS ? normalize(texture(normalMap, uv).rgb) : 
             lightType == LIGHT_LIVECALC_NORMALS ? getVertexNormal(positionForNormal) :
                 vec3(0, 0, 0);
     

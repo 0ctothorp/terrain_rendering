@@ -1,8 +1,6 @@
 #include <iostream>
 #include <cmath>
 
-#include <glm/glm.hpp>
-
 #include "hmParser.hpp"
 
 
@@ -76,11 +74,9 @@ void HMParser::SwapBytesForAllValuesInHeightmap() {
     }
 }
 
-
 std::vector<short>* HMParser::GetDataPtr() {
     return &data;
 }
-
 
 glm::vec3 HMParser::GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p2) {
     glm::vec3 edge1 = p1 - point;
@@ -170,9 +166,9 @@ void HMParser::CalculateNormals() {
                 glm::vec3 n6 = triangleNormals[i+1][j-1];
                 normal = glm::normalize(n1 + n2 + n3 + n4 + n5 + n6);
             } 
-            normals.push_back(normal.x);
-            normals.push_back(normal.y);
-            normals.push_back(normal.z);     
+            normals.push_back(normal.x * (normal.x < 0 ? 128 : 127));
+            normals.push_back(normal.y * (normal.y < 0 ? 128 : 127));
+            normals.push_back(normal.z * (normal.z < 0 ? 128 : 127));     
         }
     }
 }
@@ -201,7 +197,7 @@ short HMParser::swapBytes(short s) {
     return ((s & 0xff) << 8) | ((s & 0xff00) >> 8);
 }
 
-std::vector<float>* HMParser::GetNormalsPtr() {
+std::vector<char>* HMParser::GetNormalsPtr() {
     return &normals;
 }
 

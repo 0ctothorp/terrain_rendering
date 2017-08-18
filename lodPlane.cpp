@@ -21,7 +21,9 @@ LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWid
     SetUniforms();
     SetHeightmap(heightmapsPaths);
 
-    unsigned char terrainColors[10 * 3] {
+    int colors = 11;
+    unsigned char terrainColors[colors * 3] {
+        50, 120, 150,
         79, 198, 79,
         59, 225, 59,
         150, 255, 0,
@@ -41,7 +43,7 @@ LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWid
     GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    GL_CHECK(glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, 10, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+    GL_CHECK(glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, colors, 0, GL_RGB, GL_UNSIGNED_BYTE, 
                           terrainColors));
 }
 
@@ -111,7 +113,6 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    // GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_TRUE));
 
     HMParser hmParser(heightmapsPaths);
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, hmParser.GetTotalWidth(), 
@@ -127,10 +128,9 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 4));
-    GL_CHECK(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, hmParser.GetTotalWidth(), 
-                          hmParser.GetTotalWidth(), 0, GL_RGB, GL_FLOAT, 
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8_SNORM, hmParser.GetTotalWidth(), 
+                          hmParser.GetTotalWidth(), 0, GL_RGB, GL_BYTE, 
                           hmParser.GetNormalsPtr()->data()));
     
     shader.Uniform1f("highestPoint", hmParser.GetHighestPoint());
