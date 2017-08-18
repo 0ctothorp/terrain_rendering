@@ -17,6 +17,11 @@ HMParser::HMParser(const std::vector<std::string>& heightmaps)
     CloseFiles();
     SwapBytesForAllValuesInHeightmap();
     totalWidth = (width - 1) * sqrt(heightmaps.size());
+    for(int i = 0; i < totalWidth; i++) {
+        for(int j = 0; j < totalWidth; j++) {
+            heights.push_back(GetHeight(data[i * totalWidth + j]));
+        }
+    }
     CalculateNormals();
 }
 
@@ -70,7 +75,7 @@ void HMParser::CloseFiles() {
 
 void HMParser::SwapBytesForAllValuesInHeightmap() {
     for(size_t i = 0; i < data.size(); i++) {
-        data[i] = swapBytes(data[i]);
+        data[i] = SwapBytes(data[i]);
     }
 }
 
@@ -84,37 +89,37 @@ glm::vec3 HMParser::GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p
     return glm::normalize(glm::cross(edge1, edge2));
 }
 
-static float GetHeight(short h) {
+float HMParser::GetHeight(short h) {
     return (float)h / 50.0f;
 }
 
 glm::vec3 HMParser::GetPointTo(glm::vec3 point, PointTo_ pointTo) {
-    short pixel;
+    int index;
     switch(pointTo) {
     case PointTo_Bottom:
-        pixel = data[totalWidth * (point.z + 1) + point.x];
-        return glm::vec3(point.x, GetHeight(pixel), point.z + 1);
+        index = totalWidth * (point.z + 1) + point.x;
+        return glm::vec3(point.x, heights[index], point.z + 1);
     case PointTo_BottomLeft:
-        pixel = data[totalWidth * (point.z + 1) + (point.x - 1)];
-        return glm::vec3(point.x - 1, GetHeight(pixel), point.z + 1);
+        index = totalWidth * (point.z + 1) + (point.x - 1);
+        return glm::vec3(point.x - 1, heights[index], point.z + 1);
     case PointTo_BottomRight:
-        pixel = data[totalWidth * (point.z + 1) + point.x + 1];
-        return glm::vec3(point.x + 1, GetHeight(pixel), point.z + 1);
+        index = totalWidth * (point.z + 1) + point.x + 1;
+        return glm::vec3(point.x + 1, heights[index], point.z + 1);
     case PointTo_Left:
-        pixel = data[totalWidth * point.z + point.x - 1];
-        return glm::vec3(point.x - 1, GetHeight(pixel), point.z);
+        index = totalWidth * point.z + point.x - 1;
+        return glm::vec3(point.x - 1, heights[index], point.z);
     case PointTo_Right:
-        pixel = data[totalWidth * point.z + point.x + 1];
-        return glm::vec3(point.x + 1, GetHeight(pixel), point.z);
+        index = totalWidth * point.z + point.x + 1;
+        return glm::vec3(point.x + 1, heights[index], point.z);
     case PointTo_Top:
-        pixel = data[totalWidth * (point.z - 1) + point.x];
-        return glm::vec3(point.x, GetHeight(pixel), point.z - 1);
+        index = totalWidth * (point.z - 1) + point.x;
+        return glm::vec3(point.x, heights[index], point.z - 1);
     case PointTo_TopLeft:
-        pixel = data[totalWidth * (point.z - 1) + point.x - 1];
-        return glm::vec3(point.x - 1, GetHeight(pixel), point.z - 1);
+        index = totalWidth * (point.z - 1) + point.x - 1;
+        return glm::vec3(point.x - 1, heights[index], point.z - 1);
     case PointTo_TopRight:
-        pixel = data[totalWidth * (point.z - 1) + point.x + 1];
-        return glm::vec3(point.x + 1, GetHeight(pixel), point.z - 1);
+        index = totalWidth * (point.z - 1) + point.x + 1;
+        return glm::vec3(point.x + 1, heights[index], point.z - 1);
     default:
         throw "Wrong direction";
     }
@@ -193,7 +198,7 @@ std::vector< std::vector<glm::vec3> > HMParser::CalculateTriangleNormals() {
     return triangleNormals;
 }
 
-short HMParser::swapBytes(short s) {
+short HMParser::SwapBytes(short s) {
     return ((s & 0xff) << 8) | ((s & 0xff00) >> 8);
 }
 

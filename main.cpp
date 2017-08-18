@@ -239,15 +239,16 @@ int main(int argc, char **argv) {
             ImGui::End();
         }
         
-        int settingsWindowWidth = 250;
+        int settingsWindowWidth = 325;
+        int settingsWindowHeight = 330;
         {
-            ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, 95), ImGuiSetCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, 200), ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, Window::height - settingsWindowHeight - 10), ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, settingsWindowHeight), ImGuiSetCond_FirstUseEver);
             ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
             ImGuiWindowFlags settingsWindowFlags = 0;
             ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
             ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again "
-                                "to lock cursor and get back camera control.");
+                               "to lock cursor and get back camera control.");
 
             ImGui::Separator();
 

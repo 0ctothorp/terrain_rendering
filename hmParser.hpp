@@ -25,6 +25,7 @@ private:
     std::vector<char> normals;
     std::vector<std::ifstream> heightmapFiles;
     const std::vector<std::string> heightmapPaths;
+    std::vector<float> heights;
     float highestPoint;
 
     void TryToOpenAFile(const std::string& path, std::ifstream& stream);
@@ -34,10 +35,11 @@ private:
     void CalculateNormals();
     glm::vec3 GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p2);
     glm::vec3 GetPointTo(glm::vec3 point, PointTo_ pointTo);
-    short swapBytes(short s);
+    short SwapBytes(short s);
     glm::vec3 GetTriangleNormalTo(glm::vec3 point, PointTo_ dir);
     std::vector< std::vector<glm::vec3> > CalculateTriangleNormals();
     void SwapBytesForAllValuesInHeightmap();
+    float GetHeight(short h);
 
 public:
     const int width = 1201;
