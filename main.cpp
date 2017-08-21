@@ -177,8 +177,6 @@ int main(int argc, char **argv) {
     ImGui_ImplGlfwGL3_Init(window, false);
     
     LODPlane lodPlane(heightmaps, planeWidth);
-    // LODPlane lodPlaneNormalsDebug(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
-    //                               "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl", true);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);

@@ -8,5 +8,4 @@
 #endif
 
 
-void GetErrors(int, const char*);
 void GetFirstNMessages(GLuint numMsgs, int, const char*);

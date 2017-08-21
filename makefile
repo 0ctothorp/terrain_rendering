@@ -9,7 +9,7 @@ else
 	LDFLAGS += -lGL -lGLEW -lglfw
 endif
 
-CXXFLAGS = -std=c++14 -Wall
+CXXFLAGS = -std=c++11 -Wall
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
