@@ -14,7 +14,6 @@ private:
     Frustum frustum;
     float yaw = glm::radians(0.0f);
     float pitch = glm::radians(-25.0f);
-    float movementSpeed = 1.0f;
     glm::vec3 worldFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 position2;
     bool meshMovementLocked = false;
@@ -30,6 +29,7 @@ public:
         near,
         far
     );
+    float movementSpeed = 100.0f;    
 
     MainCamera(glm::vec3 position = glm::vec3(0, 20, 0));
     virtual glm::mat4 GetViewMatrix() const override;
@@ -39,4 +39,5 @@ public:
     bool IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, 
                          const glm::vec3 &point4) const;
     void SetMeshMovementLock(bool locked);
+
 };

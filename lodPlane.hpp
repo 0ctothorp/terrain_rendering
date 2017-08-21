@@ -22,7 +22,7 @@ private:
     glm::vec2 xzOffset;
     int planeWidth;
     bool meshMovementLocked = false;
-    bool points = false;
+    bool debugNormals = false;
 
     void CalcLayersNumber();
     void CreateTiles();
@@ -33,6 +33,7 @@ private:
 public:
     const float morphRegion = 0.3f;
     const Shader shader;
+    const Shader normalsShader;    
     const glm::mat4 projectionMatrix = glm::perspective(
         glm::radians(Camera::fov), 
         (float)Window::width / (float)Window::height,
@@ -40,9 +41,7 @@ public:
         5000.0f
     );
     
-    LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth,
-             const std::string& vshader, const std::string& fshader, 
-             const std::string& gshader, bool points = false);
+    LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth);
     ~LODPlane();
 
     void DrawFrom(const MainCamera &camera, const Camera* additionalCam = nullptr) const;
@@ -50,4 +49,5 @@ public:
     void ToggleMeshMovementLock(MainCamera &mainCam);
     GLuint GetNormalMapTex();
     GLuint GetHeightmapTex();
+    void ToggleDebugNormals();
 };

@@ -9,13 +9,11 @@
 #include "hmParser.hpp"
 
 
-LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth,
-                   const std::string& vshader, const std::string& fshader, 
-                   const std::string& gshader, bool points) 
+LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth) 
 : xzOffset(0, 0)
 , planeWidth(planeWidth)
-, shader(vshader, fshader, gshader)
-, points(points) {
+, shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
+, normalsShader("shaders/planeVertexShader.glsl", "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl") {
     CalcLayersNumber();
     CreateTiles();
     SetUniforms();
@@ -102,6 +100,11 @@ void LODPlane::SetUniforms() {
     shader.Uniform1f("morphRegion", morphRegion);
     shader.UniformMatrix4fv("projMat", projectionMatrix);
     shader.Uniform1i("meshSize", planeWidth);
+
+    normalsShader.Uniform1i("tileSize", TileGeometry::GetInstance()->tileSize);
+    normalsShader.Uniform1f("morphRegion", morphRegion);
+    normalsShader.UniformMatrix4fv("projMat", projectionMatrix);
+    normalsShader.Uniform1i("meshSize", planeWidth);
 }
 
 void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
@@ -119,8 +122,6 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
                           hmParser.GetTotalWidth(), 0, GL_RED_INTEGER, GL_SHORT, 
                           hmParser.GetDataPtr()->data()));
     
-    // if(points) return;
-    
     shader.Uniform1i("normalMap", 2);
     GL_CHECK(glGenTextures(1, &normalMapTex));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, normalMapTex));
@@ -132,13 +133,17 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8_SNORM, hmParser.GetTotalWidth(), 
                           hmParser.GetTotalWidth(), 0, GL_RGB, GL_BYTE, 
                           hmParser.GetNormalsPtr()->data()));
-    
-    shader.Uniform1f("highestPoint", hmParser.GetHighestPoint());
+
+
+    normalsShader.Uniform1i("heightmap", 0);    
+    normalsShader.Uniform1i("normalMap", 2);
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {
-    if(!meshMovementLocked)
+    if(!meshMovementLocked) {
         shader.Uniform2f("globalOffset", camera.GetPosition().x, camera.GetPosition().z);
+        if(debugNormals) normalsShader.Uniform2f("globalOffset", camera.GetPosition().x, camera.GetPosition().z);        
+    }
 
     GL_CHECK(glBindVertexArray(TileGeometry::GetInstance()->GetVaoId()));
 
@@ -147,16 +152,18 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
     else viewMat = camera.GetViewMatrix();
 
     shader.UniformMatrix4fv("viewMat", viewMat);
+    if(debugNormals) normalsShader.UniformMatrix4fv("viewMat", viewMat);    
 
     for(unsigned int i = 0; i < tiles.size(); i++) {
         shader.Uniform1i("level", i);
+        normalsShader.Uniform1i("level", i);
+        
         for(unsigned int j = 0; j < tiles[i].size(); j++) {
             if(IsTileInsideFrustum(i, j, camera)) {
                 shader.Uniform2f("localOffset", tiles[i][j].GetLocalOffset().x, 
                                  tiles[i][j].GetLocalOffset().y);
                 shader.Uniform1i("edgeMorph", tiles[i][j].GetEdgeMorph());
-                
-                shader.Use();
+
                 GL_CHECK(glActiveTexture(GL_TEXTURE0));
                 GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
                 GL_CHECK(glActiveTexture(GL_TEXTURE2));
@@ -164,9 +171,17 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
                 GL_CHECK(glActiveTexture(GL_TEXTURE3));
                 GL_CHECK(glBindTexture(GL_TEXTURE_1D, terrainColorsTex));
                 
-                GL_CHECK(glDrawElements(points ? GL_POINTS : GL_TRIANGLE_STRIP, 
+                GL_CHECK(glDrawElements(GL_TRIANGLE_STRIP, 
                     TileGeometry::GetInstance()->GetIndicesSize(), GL_UNSIGNED_INT, 
                     TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+
+                if(debugNormals) {
+                    normalsShader.Uniform2f("localOffset", tiles[i][j].GetLocalOffset().x, 
+                                    tiles[i][j].GetLocalOffset().y);
+                    normalsShader.Uniform1i("edgeMorph", tiles[i][j].GetEdgeMorph());             
+                    GL_CHECK(glDrawElements(GL_POINTS, TileGeometry::GetInstance()->GetIndicesSize(), 
+                        GL_UNSIGNED_INT, TileGeometry::GetInstance()->GetIndicesBufferPtr()));
+                }
             }
         }
     }
@@ -208,4 +223,8 @@ GLuint LODPlane::GetNormalMapTex() {
 
 GLuint LODPlane::GetHeightmapTex() {
     return heightmapTex;
+}
+
+void LODPlane::ToggleDebugNormals() {
+    debugNormals = !debugNormals;
 }

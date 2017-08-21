@@ -176,10 +176,9 @@ int main(int argc, char **argv) {
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
     ImGui_ImplGlfwGL3_Init(window, false);
     
-    LODPlane lodPlane(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
-                      "shaders/planeFragmentShader.glsl", "");
-    LODPlane lodPlaneNormalsDebug(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
-                                  "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl", true);
+    LODPlane lodPlane(heightmaps, planeWidth);
+    // LODPlane lodPlaneNormalsDebug(heightmaps, planeWidth, "shaders/planeVertexShader.glsl",
+    //                               "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl", true);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
@@ -187,7 +186,7 @@ int main(int argc, char **argv) {
     NormalMapQuad nmq(lodPlane.GetNormalMapTex());
 
     lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-    lodPlaneNormalsDebug.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+    lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
 
     std::srand(std::time(0));
     float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
@@ -204,6 +203,7 @@ int main(int argc, char **argv) {
     int infoWindowWidth = 0;
     bool debugColors = false;
     bool prevDebugColors = debugColors;
+    bool prevDrawTerrainNormals = drawTerrainNormals;
 
     enum Light_ {Light_PrecalcNormals, Light_LivecalcNormals, Light_None};
     int lightingType = Light_None;
@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
         }
         
         int settingsWindowWidth = 325;
-        int settingsWindowHeight = 330;
+        int settingsWindowHeight = 350;
         {
             ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, Window::height - settingsWindowHeight - 10), ImGuiSetCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, settingsWindowHeight), ImGuiSetCond_FirstUseEver);
@@ -267,6 +267,10 @@ int main(int argc, char **argv) {
             ImGui::RadioButton("Live calculated normals", &lightingType, Light_LivecalcNormals);
             ImGui::RadioButton("No normals (no light)", &lightingType, Light_None);
 
+            ImGui::Separator();
+
+            ImGui::DragFloat("Movement speed", &mainCamera.movementSpeed);
+
             ImGui::End();
         }
 
@@ -285,11 +289,11 @@ int main(int argc, char **argv) {
         prevLightingType = lightingType;
 
         lodPlane.shader.Uniform1i("lightType", lightingType);
-        lodPlaneNormalsDebug.shader.Uniform1i("lightType", lightingType);
+        lodPlane.normalsShader.Uniform1i("lightType", lightingType);
 
         if(terrainVertexSnapping != prevTerrainVertexSnapping) {
             lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-            lodPlaneNormalsDebug.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+            lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
         }
         prevTerrainVertexSnapping = terrainVertexSnapping;
 
@@ -300,10 +304,8 @@ int main(int argc, char **argv) {
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
 
-        if(prevMeshMovementLocked != meshMovementLocked) {
+        if(prevMeshMovementLocked != meshMovementLocked)
             lodPlane.ToggleMeshMovementLock(mainCamera);  
-            lodPlaneNormalsDebug.ToggleMeshMovementLock(mainCamera);
-        }  
         prevMeshMovementLocked = meshMovementLocked;
 
         if(wireframeMode)
@@ -311,8 +313,10 @@ int main(int argc, char **argv) {
 
         lodPlane.DrawFrom(mainCamera);
 
-        if(drawTerrainNormals)
-            lodPlaneNormalsDebug.DrawFrom(mainCamera);
+        if(drawTerrainNormals != prevDrawTerrainNormals)
+            lodPlane.ToggleDebugNormals();
+        prevDrawTerrainNormals = drawTerrainNormals;
+
         if(wireframeMode)
             GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
@@ -320,8 +324,7 @@ int main(int argc, char **argv) {
             topViewFb.Draw(lodPlane, &topCam, &mainCamera);
 
         lodPlane.shader.UniformMatrix4fv("projMat", lodPlane.projectionMatrix);
-        lodPlaneNormalsDebug.shader.UniformMatrix4fv("projMat", 
-            lodPlaneNormalsDebug.projectionMatrix);
+        lodPlane.normalsShader.UniformMatrix4fv("projMat", lodPlane.projectionMatrix);
 
         if(drawTopView)
             topViewScreenQuad.Draw();

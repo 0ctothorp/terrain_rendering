@@ -65,15 +65,9 @@ void GetFirstNMessages(GLuint numMsgs, int line, const char* file) {
 	ids.resize(numFound);
 	lengths.resize(numFound);
 
-	// std::vector<std::string> messages;
-	// messages.reserve(numFound);
-
 	std::vector<GLchar>::iterator currPos = msgData.begin();
 	for(size_t msg = 0; msg < lengths.size(); ++msg) {
-		// messages.push_back(std::string(currPos, currPos + lengths[msg] - 1));
         std::cerr << file << ":" << line << ">\n";
-        std::cerr << sources[msg] << "; " << types[msg] << "; " << severities[msg] << "; "
-                  << ids[msg] << "; \n";
         std::cerr << std::string(currPos, currPos + lengths[msg] - 1) << std::endl << std::endl;
 		currPos = currPos + lengths[msg];
 	}
