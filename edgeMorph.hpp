@@ -1,6 +1,7 @@
 #pragma once
 
 
+/* Kierunki "morfingu" jednego poziomu LOD w drugi. */
 class EdgeMorph {
 public:
     static const int TOP = 1;

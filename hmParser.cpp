@@ -209,7 +209,3 @@ std::vector<char>* HMParser::GetNormalsPtr() {
 int HMParser::GetTotalWidth() {
     return totalWidth;
 }
-
-float HMParser::GetHighestPoint() {
-    return highestPoint;
-}

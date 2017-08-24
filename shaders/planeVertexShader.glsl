@@ -48,6 +48,8 @@ vec3 globalOffsetV3;
 int scale;
 int heightmapSize;
 
+/* Zwraca wartość z zakresu [0, 1] określającą w jakim stopniu przekształcania do kolejnego poziomu
+   znajduje się 'pos'. */
 float getMorphFactor(vec3 pos) {
     if(edgeMorph == EDGE_MORPH_BOTTOM && pos.z >= 1.0 - morphRegion)
         return (pos.z - 1.0f) / morphRegion + 1.0f;
@@ -70,7 +72,9 @@ float getMorphFactor(vec3 pos) {
     return 0.0f;
 }
 
-vec3 calcArbitraryVertexPosition(vec3 pos) {
+/* Oblicza wysokość dla 'pos' (sąsiedniego wierzchołka) odczytując wartość z heightmapy 
+   i zwraca nowy wektor zawierający dane z 'pos' i obliczoną wysokość. */
+vec3 calcHeightForNeighbourVertexPosition(vec3 pos) {
     vec3 result = tileSize * (scale * pos + localOffsetV3) + globalOffsetV3;
     result.y = texture(
         heightmap, 
@@ -80,57 +84,65 @@ vec3 calcArbitraryVertexPosition(vec3 pos) {
     return result;
 }
 
-vec3 getArbitraryVertexPosition(const int direction) {
+/* Oblicza pozycję sąsiedniego wierzchołka siatki. */
+vec3 getNeighbourVertexPosition(const int direction) {
     float offset = 1.0f / float(tileSize);
     switch(direction) {
     case DIR_UP:
         vec3 posUp = pos - vec3(0, 0, offset);
-        return calcArbitraryVertexPosition(posUp);
+        return calcHeightForNeighbourVertexPosition(posUp);
     case DIR_DOWN:
         vec3 posDown = pos + vec3(0, 0, offset);
-        return calcArbitraryVertexPosition(posDown);
+        return calcHeightForNeighbourVertexPosition(posDown);
     case DIR_LEFT:
         vec3 posLeft = pos - vec3(offset, 0, 0);
-        return calcArbitraryVertexPosition(posLeft);
+        return calcHeightForNeighbourVertexPosition(posLeft);
     case DIR_RIGHT:
         vec3 posRight = pos + vec3(offset, 0, 0);
-        return calcArbitraryVertexPosition(posRight);
+        return calcHeightForNeighbourVertexPosition(posRight);
     case DIR_RIGHTUP:
         vec3 posUpRight = pos + vec3(offset, 0, -offset);
-        return calcArbitraryVertexPosition(posUpRight);
+        return calcHeightForNeighbourVertexPosition(posUpRight);
     case DIR_RIGHTDOWN:
         vec3 posDownRight = pos + vec3(offset, 0, offset);
-        return calcArbitraryVertexPosition(posDownRight);
+        return calcHeightForNeighbourVertexPosition(posDownRight);
     case DIR_LEFTUP:
         vec3 posUpLeft = pos - vec3(offset, 0, offset);
-        return calcArbitraryVertexPosition(posUpLeft);
+        return calcHeightForNeighbourVertexPosition(posUpLeft);
     case DIR_LEFTDOWN:
         vec3 posDownLeft = pos + vec3(-offset, 0, offset);
-        return calcArbitraryVertexPosition(posDownLeft);
+        return calcHeightForNeighbourVertexPosition(posDownLeft);
     default:
         return vec3(0, 0, 0);
     }
 }
 
+// Zwraca wektor normalny powierzchni trójkąta opisywanego przez 'v1', 'v2' i 'v3'.
 vec3 getTriangleNormal(vec3 v1, vec3 v2, vec3 v3) {
     vec3 edge1 = v2 - v3;
     vec3 edge2 = v1 - v3;
     return normalize(cross(edge1, edge2));
 }
 
-vec3 getArbitraryTriangleNormal(const int direction1, const int direction2, vec3 position) {
-    vec3 vertex1 = getArbitraryVertexPosition(direction1);
-    vec3 vertex2 = getArbitraryVertexPosition(direction2);
+/* Zwraca wektor normalny dla trójkąta zawierającego 'position', a którego kolejne 2 wierzchołki
+   znajdują się w kierunkach 'direction1' i 'direction2'. Nie znamy ich konkretnych pozycji
+   dlatego posługujemy się kierunkami. */
+vec3 getNeighbourTriangleNormal(const int direction1, const int direction2, vec3 position) {
+    vec3 vertex1 = getNeighbourVertexPosition(direction1);
+    vec3 vertex2 = getNeighbourVertexPosition(direction2);
     return getTriangleNormal(vertex1, vertex2, position);
 }
 
+/* Zwraca wektor normalny dla wierzchołka 'position' wyliczając wektory normalne
+   dla trójkątów zawierających ten wierzchołek, a następnie dodając je i normalizując
+   sumę. */
 vec3 getVertexNormal(vec3 position) {
-    vec3 upperNormal = getArbitraryTriangleNormal(DIR_UP, DIR_RIGHTUP, position);
-    vec3 upperRightNormal = getArbitraryTriangleNormal(DIR_RIGHTUP, DIR_RIGHT, position);
-    vec3 lowerRightNormal = getArbitraryTriangleNormal(DIR_RIGHT, DIR_DOWN, position);
-    vec3 lowerNormal = getArbitraryTriangleNormal(DIR_DOWN, DIR_LEFTDOWN, position);
-    vec3 lowerLeftNormal = getArbitraryTriangleNormal(DIR_LEFTDOWN, DIR_LEFT, position);
-    vec3 upperLeftNormal = getArbitraryTriangleNormal(DIR_LEFT, DIR_UP, position);
+    vec3 upperNormal = getNeighbourTriangleNormal(DIR_UP, DIR_RIGHTUP, position);
+    vec3 upperRightNormal = getNeighbourTriangleNormal(DIR_RIGHTUP, DIR_RIGHT, position);
+    vec3 lowerRightNormal = getNeighbourTriangleNormal(DIR_RIGHT, DIR_DOWN, position);
+    vec3 lowerNormal = getNeighbourTriangleNormal(DIR_DOWN, DIR_LEFTDOWN, position);
+    vec3 lowerLeftNormal = getNeighbourTriangleNormal(DIR_LEFTDOWN, DIR_LEFT, position);
+    vec3 upperLeftNormal = getNeighbourTriangleNormal(DIR_LEFT, DIR_UP, position);
     return normalize(upperNormal + upperRightNormal + lowerRightNormal + lowerNormal + 
         lowerLeftNormal + upperLeftNormal);
 }

@@ -48,8 +48,6 @@ void TileGeometry::SetBuffers() {
 
     SetVBO();
     SetIBO();
-
-    // glBindVertexArray(0);
 }
 
 void TileGeometry::SetVBO() {
@@ -100,5 +98,3 @@ GLuint TileGeometry::GetVboId() { return vboId; }
 GLuint TileGeometry::GetIboId() { return iboId; }
 
 GLuint* TileGeometry::GetIndicesBufferPtr() { return &(indices[0]); }
-
-vector<GLuint>* TileGeometry::GetIndicesVector() { return &indices; }

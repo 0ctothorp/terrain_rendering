@@ -4,6 +4,9 @@
 #include "glDebug.hpp"
 
 
+/* Klasa pomocna przy debugowaniu do narysowania na ekranie prostokątu
+   z nałożoną teksturą zawierającą informacje o wektorach normalnych
+   wierzchołków siatki terenu. */
 class NormalMapQuad : public Drawable {
 private:
     GLuint textureId;
@@ -51,7 +54,6 @@ public:
 
     void Draw() {
         shader.Use();
-        // GL_CHECK(glDisable(GL_DEPTH_TEST));
         BindVao();
         GL_CHECK(glActiveTexture(GL_TEXTURE2));
         GL_CHECK(glBindTexture(GL_TEXTURE_2D, textureId));

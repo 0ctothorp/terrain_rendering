@@ -5,13 +5,12 @@
 #include "lodPlane.hpp"
 #include "tileGeometry.hpp"
 #include "glDebug.hpp"
-#include "tileMesh.hpp"
 #include "hmParser.hpp"
+#include "edgeMorph.hpp"
 
 
 LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth) 
-: xzOffset(0, 0)
-, planeWidth(planeWidth)
+: planeWidth(planeWidth)
 , shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
 , normalsShader("shaders/planeVertexShader.glsl", "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl") {
     CalcLayersNumber();
@@ -98,12 +97,10 @@ void LODPlane::CreateTiles() {
 void LODPlane::SetUniforms() {
     shader.Uniform1i("tileSize", TileGeometry::GetInstance()->tileSize);
     shader.Uniform1f("morphRegion", morphRegion);
-    shader.UniformMatrix4fv("projMat", projectionMatrix);
     shader.Uniform1i("meshSize", planeWidth);
 
     normalsShader.Uniform1i("tileSize", TileGeometry::GetInstance()->tileSize);
     normalsShader.Uniform1f("morphRegion", morphRegion);
-    normalsShader.UniformMatrix4fv("projMat", projectionMatrix);
     normalsShader.Uniform1i("meshSize", planeWidth);
 }
 
@@ -188,17 +185,19 @@ void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) c
 }
 
 bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) const {
+    glm::vec3 camPos = mainCam.GetPosition();
+    glm::vec2 globOffset(camPos.x, camPos.z);
     glm::vec2 upperLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize + 
-        TileMesh::GetGlobalOffset();
+        globOffset;
     glm::vec2 upperRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize
-        + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f) + TileMesh::GetGlobalOffset();     
+        + glm::vec2((float)TileGeometry::tileSize * pow(2, i), 0.f) + globOffset;     
     glm::vec2 lowerRight = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
                            + glm::vec2((float)TileGeometry::tileSize * pow(2, i),
                                        (float)TileGeometry::tileSize * pow(2, i)) + 
-                           TileMesh::GetGlobalOffset();
+                           globOffset;
     glm::vec2 lowerLeft = tiles[i][j].GetLocalOffset() * (float)TileGeometry::tileSize 
                           + glm::vec2(0.f, (float)TileGeometry::tileSize * pow(2, i)) + 
-                          TileMesh::GetGlobalOffset(); 
+                          globOffset; 
 
     glm::vec3 upLeft = glm::vec3(upperLeft.x, 0.0f, upperLeft.y);
     glm::vec3 upRight = glm::vec3(upperRight.x, 0.0f, upperRight.y);
@@ -208,20 +207,16 @@ bool LODPlane::IsTileInsideFrustum(int i, int j, const MainCamera &mainCam) cons
     return mainCam.IsInsideFrustum(upLeft, upRight, loRight, loLeft);
 }
 
-GLuint LODPlane::GetHeightmapTexture() const {
-    return heightmapTex;
-}
-
 void LODPlane::ToggleMeshMovementLock(MainCamera &mainCam) {
     meshMovementLocked = !meshMovementLocked;
     mainCam.SetMeshMovementLock(meshMovementLocked);
 }
 
-GLuint LODPlane::GetNormalMapTex() {
+GLuint LODPlane::GetNormalMapTex() const {
     return normalMapTex;
 }
 
-GLuint LODPlane::GetHeightmapTex() {
+GLuint LODPlane::GetHeightmapTex() const {
     return heightmapTex;
 }
 

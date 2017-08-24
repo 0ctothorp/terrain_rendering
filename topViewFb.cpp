@@ -16,7 +16,6 @@ void TopViewFb::Draw(const LODPlane &lodPlane, TopCamera* topCam, MainCamera* ma
     GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)); 
     GL_CHECK(glEnable(GL_DEPTH_TEST));
     GL_CHECK(glActiveTexture(GL_TEXTURE0));
-    // GL_CHECK(glBindTexture(GL_TEXTURE_2D, lodPlane.GetHeightmapTexture()));
     lodPlane.shader.UniformMatrix4fv("projMat", topCam->projectionMatrix);
     topCam->SetPosition(glm::vec3(mainCam->GetPosition().x, topCam->GetPosition().y, 
                                   mainCam->GetPosition().z));

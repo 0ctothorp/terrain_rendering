@@ -185,6 +185,8 @@ int main(int argc, char **argv) {
 
     lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
     lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+    lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+    lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
 
     std::srand(std::time(0));
     float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
@@ -296,8 +298,6 @@ int main(int argc, char **argv) {
         prevTerrainVertexSnapping = terrainVertexSnapping;
 
         mainCamera.Move(keys, deltaTime);
-        glm::vec3 mainCamPos = mainCamera.GetPosition();
-        TileMesh::SetGlobalOffset(mainCamPos.x, mainCamPos.z);
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
@@ -321,8 +321,8 @@ int main(int argc, char **argv) {
         if(drawTopView)
             topViewFb.Draw(lodPlane, &topCam, &mainCamera);
 
-        lodPlane.shader.UniformMatrix4fv("projMat", lodPlane.projectionMatrix);
-        lodPlane.normalsShader.UniformMatrix4fv("projMat", lodPlane.projectionMatrix);
+        lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+        lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
 
         if(drawTopView)
             topViewScreenQuad.Draw();
