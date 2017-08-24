@@ -32,7 +32,7 @@ public:
     // Odległość bliskiej płaszczyzny (near plane) od kamery.
     const float near = 0.01f;
     // Odległość dalekiej płaszczyzny (far plane) od kamery.
-    const float far = 2000.0f;
+    const float far = 10000.0f;
     // Macierz projekcji
     const glm::mat4x4 projectionMat = glm::perspective(
         glm::radians(fov), 

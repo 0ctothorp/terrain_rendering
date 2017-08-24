@@ -141,7 +141,6 @@ GLFWwindow* GetGLFWwindow(const char *name){
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetScrollCallback(window, MouseScrollCallback);
-    // glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
 
     return window;
 }
