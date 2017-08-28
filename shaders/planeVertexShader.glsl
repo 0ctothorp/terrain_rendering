@@ -87,7 +87,7 @@ vec3 calcHeightForNeighbourVertexPosition(vec3 pos) {
 
 /* Oblicza pozycję sąsiedniego wierzchołka siatki. */
 vec3 getNeighbourVertexPosition(const int direction) {
-    float offset = /* 1.0f / float(tileSize); */ mix(scale, scale * 2, morphFactor);
+    float offset = /* 1.0f / float(tileSize); */ /* mix(scale, scale * 2, morphFactor); */ 1.0f;
     switch(direction) {
     case DIR_UP:
         vec3 posUp = position - vec3(0, 0, scale);
@@ -154,7 +154,6 @@ void main() {
 
     scale = int(pow(2, level));
     position = tileSize * (scale * pos + localOffsetV3);
-    vec3 positionForNormal = position + globalOffsetV3;
     if(vertexSnapping) {
         position = floor((position + globalOffsetV3) / float(scale)) * float(scale);
     }
@@ -172,11 +171,17 @@ void main() {
     sample_ = texture(heightmap, uv).r / 50.0f;
     
     position.y = sample_;
-    positionForNormal.y = position.y;
-    vertexNormal = 
-        lightType == LIGHT_PRECALC_NORMALS ? normalize(texture(normalMap, uv).rgb) : 
-            lightType == LIGHT_LIVECALC_NORMALS ? getVertexNormal(position) :
-                vec3(0, 0, 0);
+    // vertexNormal = 
+    //     lightType == LIGHT_PRECALC_NORMALS ? normalize(texture(normalMap, uv).rgb) : 
+    //         lightType == LIGHT_LIVECALC_NORMALS ? getVertexNormal(position) :
+    //             vec3(0, 0, 0);
+
+    float right = getNeighbourVertexPosition(DIR_RIGHT).y;
+    float left = getNeighbourVertexPosition(DIR_LEFT).y;
+    float up = getNeighbourVertexPosition(DIR_UP).y;
+    float down = getNeighbourVertexPosition(DIR_DOWN).y;
+
+    vertexNormal = normalize(vec3(left - right, scale, up - down));
     
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     fragPos = position;
