@@ -17,12 +17,12 @@ HMParser::HMParser(const std::vector<std::string>& heightmaps)
     CloseFiles();
     SwapBytesForAllValuesInHeightmap();
     totalWidth = (width - 1) * sqrt(heightmaps.size());
-    for(int i = 0; i < totalWidth; i++) {
-        for(int j = 0; j < totalWidth; j++) {
-            heights.push_back(GetHeight(data[i * totalWidth + j]));
-        }
-    }
-    CalculateNormals();
+    // for(int i = 0; i < totalWidth; i++) {
+    //     for(int j = 0; j < totalWidth; j++) {
+    //         heights.push_back(GetHeight(data[i * totalWidth + j]));
+    //     }
+    // }
+    // CalculateNormals();
 }
 
 void HMParser::TryToOpenAFile(const std::string& path, std::ifstream& stream) {
