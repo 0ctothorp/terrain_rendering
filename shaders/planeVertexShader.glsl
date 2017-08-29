@@ -22,7 +22,6 @@ const int LIGHT_LIVECALC_NORMALS = 1;
 const int LIGHT_NONE = 2;
 
 out float morphFactor;
-out float sample_;
 out vec3 fragPos;
 out vec3 vertexNormal;
 out vec2 uv;
@@ -168,20 +167,19 @@ void main() {
     heightmapSize = textureSize(heightmap, 0).x;
     uv = (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) + (heightmapSize - meshSize) 
         / 2.0f) / heightmapSize;
-    sample_ = texture(heightmap, uv).r / 50.0f;
-    
-    position.y = sample_;
-    // vertexNormal = 
-    //     lightType == LIGHT_PRECALC_NORMALS ? normalize(texture(normalMap, uv).rgb) : 
-    //         lightType == LIGHT_LIVECALC_NORMALS ? getVertexNormal(position) :
-    //             vec3(0, 0, 0);
+    position.y = texture(heightmap, uv).r / 50.0f;
 
-    float right = getNeighbourVertexPosition(DIR_RIGHT).y;
-    float left = getNeighbourVertexPosition(DIR_LEFT).y;
-    float up = getNeighbourVertexPosition(DIR_UP).y;
-    float down = getNeighbourVertexPosition(DIR_DOWN).y;
-
-    vertexNormal = normalize(vec3(left - right, scale, up - down));
+    if(lightType == LIGHT_LIVECALC_NORMALS) {
+        float right = getNeighbourVertexPosition(DIR_RIGHT).y;
+        float left = getNeighbourVertexPosition(DIR_LEFT).y;
+        float up = getNeighbourVertexPosition(DIR_UP).y;
+        float down = getNeighbourVertexPosition(DIR_DOWN).y;
+        vertexNormal = normalize(vec3(left - right, scale, down - up));    
+    } else if(lightType == LIGHT_PRECALC_NORMALS) {
+        // vertexNormal = normalize(texture(normalMap, uv).rgb);
+    } else {
+        vertexNormal = vec3(0, 0, 0);
+    }
     
     gl_Position = projMat * viewMat * vec4(position, 1.0f);
     fragPos = position;

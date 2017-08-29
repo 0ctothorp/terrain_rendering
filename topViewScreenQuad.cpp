@@ -22,12 +22,12 @@ void TopViewScreenQuad::SetBufferData() {
     float topViewYsize = ((topViewXsize * fb->GetResHeight()) / 
                          (float)fb->GetResWidth()) * screenRatio;
     GLfloat topViewQuad[] {
-        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
-        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 1.0f,
-        -1 + topViewXsize, 1 - topViewYsize, 0.0f, 1.0f, 0.0f,
-        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 0.0f
+        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 1.0f,
+        -1.0f, 1 - topViewYsize, 0.0f, 0.0f, 1.0f,
+        -1 + topViewXsize, 1 - topViewYsize, 0.0f, 1.0f, 1.0f,
+        -1 + topViewXsize, 1.0f, 0.0f, 1.0f, 0.0f
     };
     GL_CHECK(glBufferData(
         GL_ARRAY_BUFFER,

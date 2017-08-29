@@ -137,6 +137,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     GL_CHECK(glEnable(GL_BLEND));
     GL_CHECK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_CULL_FACE);
 
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);

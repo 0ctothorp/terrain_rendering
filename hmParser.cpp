@@ -5,8 +5,7 @@
 
 
 HMParser::HMParser(const std::vector<std::string>& heightmaps) 
-: totalWidth((width - 1) * sqrt(heightmaps.size())) // z jakiegoś powodu ta inicjalizacja nie działa i muszę przypisać wartość jeszcze raz niżej
-, heightmapFiles(heightmaps.size()) 
+: heightmapFiles(heightmaps.size()) 
 , heightmapPaths(heightmaps) {
     int i = 0;
     for(auto& hmFile: heightmapFiles) {
@@ -17,12 +16,12 @@ HMParser::HMParser(const std::vector<std::string>& heightmaps)
     CloseFiles();
     SwapBytesForAllValuesInHeightmap();
     totalWidth = (width - 1) * sqrt(heightmaps.size());
-    // for(int i = 0; i < totalWidth; i++) {
-    //     for(int j = 0; j < totalWidth; j++) {
-    //         heights.push_back(GetHeight(data[i * totalWidth + j]));
-    //     }
-    // }
-    // CalculateNormals();
+    for(int i = 0; i < totalWidth; i++) {
+        for(int j = 0; j < totalWidth; j++) {
+            heights.push_back(GetHeight(data[i * totalWidth + j]));
+        }
+    }
+    CalculateNormals();
 }
 
 void HMParser::TryToOpenAFile(const std::string& path, std::ifstream& stream) {
@@ -31,7 +30,7 @@ void HMParser::TryToOpenAFile(const std::string& path, std::ifstream& stream) {
     } catch(const std::ifstream::failure &e) {
         std::cerr << "[EXCEPTION: HMParser::ParseHeightmaps] " << e.what() << '\n'
                   << "Error code: " << e.code() << '\n'
-                  << "In other words: Thre was a problem with opening a "
+                  << "There was a problem with opening a "
                   << path << " file. Please check if it exists.\n";
         exit(EXIT_FAILURE);
     }
@@ -83,12 +82,6 @@ std::vector<short>* HMParser::GetDataPtr() {
     return &data;
 }
 
-glm::vec3 HMParser::GetTriangleNormal(glm::vec3 point, glm::vec3 p1, glm::vec3 p2) {
-    glm::vec3 edge1 = p1 - point;
-    glm::vec3 edge2 = p2 - point;
-    return glm::normalize(glm::cross(edge1, edge2));
-}
-
 float HMParser::GetHeight(short h) {
     return (float)h / 50.0f;
 }
@@ -126,76 +119,63 @@ glm::vec3 HMParser::GetPointTo(glm::vec3 point, PointTo_ pointTo) {
 }
 
 void HMParser::CalculateNormals() {
-    std::vector< std::vector<glm::vec3> > triangleNormals = CalculateTriangleNormals();
-    for(int i = 0; i < totalWidth * 2 - 1; i += 2) {
+    for(int i = 0; i < totalWidth; i++) {
         for(int j = 0; j < totalWidth; j++) {
             glm::vec3 normal;
+            glm::vec3 point(j, 0, i);
+            float hL, hR, hU, hD;
             if(i == 0 && j == 0) { // top left corner
-                normal = triangleNormals[i][j];
+                hL = 0;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = 0;
+                hD = GetPointTo(point, PointTo_Bottom).y;
             }  else if(i == 0 && j > 0 && j < totalWidth - 1) { // top edge
-                glm::vec3 n1 = triangleNormals[i][j];
-                glm::vec3 n2 = triangleNormals[i+1][j-1];
-                glm::vec3 n3 = triangleNormals[i][j-1];
-                normal = glm::normalize(n1 + n2 + n3); 
+                hL = GetPointTo(point, PointTo_Left).y;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = 0;
+                hD = GetPointTo(point, PointTo_Bottom).y;
             } else if(j == 0 && i > 0 && i < totalWidth - 1) { //left edge
-                glm::vec3 n1 = triangleNormals[i][j];
-                glm::vec3 n2 = triangleNormals[i-1][j];
-                glm::vec3 n3 = triangleNormals[i-2][j];
-                normal = glm::normalize(n1 + n2 + n3); 
+                hL = 0;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = GetPointTo(point, PointTo_Top).y;
+                hD = GetPointTo(point, PointTo_Bottom).y;
             } else if(i == totalWidth - 1 && j == totalWidth - 1) { // bottom right corner
-                normal = triangleNormals[i][j-1];
+                hL = GetPointTo(point, PointTo_Left).y;
+                hR = 0;
+                hU = GetPointTo(point, PointTo_Top).y;
+                hD = 0;                
             } else if(i == totalWidth - 1 && j < totalWidth - 1 && j > 0) { // bottom edge
-                glm::vec3 n1 = triangleNormals[i-1][j];
-                glm::vec3 n2 = triangleNormals[i][j-1];
-                glm::vec3 n3 = triangleNormals[i][j];
-                normal = glm::normalize(n1 + n2 + n3);
+                hL = GetPointTo(point, PointTo_Left).y;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = GetPointTo(point, PointTo_Top).y;
+                hD = 0;                
             } else if(i == totalWidth - 1 && j == 0) { // bottom left corner
-                glm::vec3 n1 = triangleNormals[i][j];
-                glm::vec3 n2 = triangleNormals[i-1][j];
-                normal = glm::normalize(n1 + n2);
+                hL = 0;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = GetPointTo(point, PointTo_Top).y;
+                hD = 0;                
             } else if(i == 0 && j == totalWidth - 1) { // top right corner
-                glm::vec3 n1 = triangleNormals[i][j-1];
-                glm::vec3 n2 = triangleNormals[i+1][j-1];
-                normal = glm::normalize(n1 + n2);
+                hL = GetPointTo(point, PointTo_Left).y;
+                hR = 0;
+                hU = 0;
+                hD = GetPointTo(point, PointTo_Bottom).y;                
             } else if(j == totalWidth - 1 && i > 0 && i < totalWidth - 1) { // top edge
-                glm::vec3 n1 = triangleNormals[i][j];
-                glm::vec3 n2 = triangleNormals[i][j-1];
-                glm::vec3 n3 = triangleNormals[i+1][j-1];
-                normal = glm::normalize(n1 + n2 + n3);
+                hL = GetPointTo(point, PointTo_Left).y;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = 0;
+                hD = GetPointTo(point, PointTo_Bottom).y;                
             } else { // inside
-                glm::vec3 n1 = triangleNormals[i][j];
-                glm::vec3 n2 = triangleNormals[i-1][j];
-                glm::vec3 n3 = triangleNormals[i-2][j];
-                glm::vec3 n4 = triangleNormals[i-1][j-1];
-                glm::vec3 n5 = triangleNormals[i][j-1];
-                glm::vec3 n6 = triangleNormals[i+1][j-1];
-                normal = glm::normalize(n1 + n2 + n3 + n4 + n5 + n6);
+                hL = GetPointTo(point, PointTo_Left).y;
+                hR = GetPointTo(point, PointTo_Right).y;
+                hU = GetPointTo(point, PointTo_Top).y;
+                hD = GetPointTo(point, PointTo_Bottom).y;
             } 
+            normal = glm::normalize(glm::vec3(hL - hR, 2.0f, hD - hU));            
             normals.push_back(normal.x * (normal.x < 0 ? 128 : 127));
             normals.push_back(normal.y * (normal.y < 0 ? 128 : 127));
             normals.push_back(normal.z * (normal.z < 0 ? 128 : 127));     
         }
     }
-}
-
-std::vector< std::vector<glm::vec3> > HMParser::CalculateTriangleNormals() {
-    std::vector< std::vector<glm::vec3> > triangleNormals(totalWidth * 2, std::vector<glm::vec3>(totalWidth));
-    for(int i = 0; i < totalWidth * 2 - 1; i += 2) {
-        for(int j = 0; j < totalWidth - 1; j++) { 
-            short pixel1 = data[totalWidth * (i / 2) + j];
-            glm::vec3 p1 = glm::vec3(j, GetHeight(pixel1), i / 2);
-            glm::vec3 p1Bot = GetPointTo(p1, PointTo_Bottom);
-            glm::vec3 p1TopR = GetPointTo(p1, PointTo_Right);
-            triangleNormals[i][j] = GetTriangleNormal(p1, p1Bot, p1TopR);
-            
-            short pixel2 = data[totalWidth * ((i / 2) + 1) + j];            
-            glm::vec3 p2 = glm::vec3(j, GetHeight(pixel2), i / 2 + 1);
-            glm::vec3 p2Right = GetPointTo(p2, PointTo_Right);
-            glm::vec3 p2TopR = GetPointTo(p2, PointTo_TopRight);
-            triangleNormals[i+1][j] = GetTriangleNormal(p2, p2Right, p2TopR);            
-        }
-    }
-    return triangleNormals;
 }
 
 short HMParser::SwapBytes(short s) {

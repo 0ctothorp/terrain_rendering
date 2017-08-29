@@ -16,6 +16,7 @@ out vec4 fragColor;
 uniform int level;
 uniform isampler2D heightmap;
 uniform sampler1D terrainColors;
+uniform sampler2D normalMap;
 uniform bool debug = false;
 uniform int meshSize;
 uniform vec3 lightPosition;
@@ -42,7 +43,9 @@ void main() {
     if(lightType != LIGHT_NONE) {
         vec3 lightDirection = normalize(lightPosition - fragPos);
 
-        float diffuseImpact = max(dot(vertexNormal, lightDirection), 0.0f);
+        vec3 normal = vertexNormal;
+        if(lightType == LIGHT_PRECALC_NORMALS) normal = normalize(texture(normalMap, uv).rgb);
+        float diffuseImpact = max(dot(normal, lightDirection), 0.0f);
         vec3 lightColor = vec3(1, 1, 1);
         vec3 diffuseComponent = diffuseImpact * lightColor;
 
