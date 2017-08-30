@@ -86,7 +86,6 @@ void HMParser::EliminateDataVoids() {
             if(data[index] < -32000) {
                 int count = 0;
                 int sum = 0;
-                // std::vector<short> tmpheights;
                 int offset = 1;
                 for(int k = i - offset; k <= i + offset; k++) {
                     for(int m = j - offset; m <= j + offset; m++) {
@@ -96,7 +95,6 @@ void HMParser::EliminateDataVoids() {
                         if(data[index2] > -32000) {
                             sum += data[index2];
                             count++;
-                            // tmpheights.push_back(data[index2]);
                         }
                     }
                 }
