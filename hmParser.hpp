@@ -68,6 +68,8 @@ private:
     /* Zwraca końcową wartość wysokości (taką która pojawi się w shaderze) dla wysokości 
        odczytanej z heightmapy. */
     float GetHeight(short h);
+    /* Eliminuje braki danych w heightmapie */
+    void EliminateDataVoids();
 
 public:
     // Szerokość jednej heightmapy typu SRTM3, czyli ile wartości mieści się "na jednym boku".

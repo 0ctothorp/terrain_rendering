@@ -16,6 +16,7 @@ HMParser::HMParser(const std::vector<std::string>& heightmaps)
     CloseFiles();
     SwapBytesForAllValuesInHeightmap();
     totalWidth = (width - 1) * sqrt(heightmaps.size());
+    EliminateDataVoids();    
     for(int i = 0; i < totalWidth; i++) {
         for(int j = 0; j < totalWidth; j++) {
             heights.push_back(GetHeight(data[i * totalWidth + j]));
@@ -75,6 +76,34 @@ void HMParser::CloseFiles() {
 void HMParser::SwapBytesForAllValuesInHeightmap() {
     for(size_t i = 0; i < data.size(); i++) {
         data[i] = SwapBytes(data[i]);
+    }
+}
+
+void HMParser::EliminateDataVoids() {
+    for(int i = 0; i < totalWidth; i++) {
+        for(int j = 0; j < totalWidth; j++) {
+            int index = i * totalWidth + j;
+            if(data[index] < -32000) {
+                int count = 0;
+                int sum = 0;
+                // std::vector<short> tmpheights;
+                int offset = 1;
+                for(int k = i - offset; k <= i + offset; k++) {
+                    for(int m = j - offset; m <= j + offset; m++) {
+                        if(k == i && m == j) continue;
+                        int index2 = k * totalWidth + m;
+                        if(index2 > totalWidth * totalWidth || index2 < 0) continue;
+                        if(data[index2] > -32000) {
+                            sum += data[index2];
+                            count++;
+                            // tmpheights.push_back(data[index2]);
+                        }
+                    }
+                }
+
+                data[index] = sum / count;
+            }
+        }
     }
 }
 
