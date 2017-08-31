@@ -31,7 +31,7 @@ void TopViewScreenQuad::SetBufferData() {
     };
     GL_CHECK(glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(topViewQuad) * sizeof(GLfloat),
+        sizeof(topViewQuad),
         &topViewQuad,
         GL_STATIC_DRAW
     ));

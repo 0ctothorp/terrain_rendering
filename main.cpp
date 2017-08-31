@@ -9,6 +9,9 @@
 
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_GIF
+#include "libs/stb/stb_image.h"
 
 #include "mainCamera.hpp"
 #include "topCamera.hpp"
@@ -151,6 +154,22 @@ int random(int min, int max) {
     return min + (max - min) * rand;
 }
 
+class Img {
+private:
+    unsigned char* data;
+    int sizeX, sizeY, channels;
+public:
+    Img(std::string filePath, int request_components=0) {
+        data = stbi_load(filePath.c_str(), &sizeX, &sizeY, &channels, request_components);
+    }
+
+    ~Img()                   { stbi_image_free(data); }
+    int GetSizeX()           { return sizeX; }
+    int GetSizeY()           { return sizeY; }
+    int GetChannels()        { return channels; }
+    unsigned char* GetData() { return data; }
+};
+
 int main(int argc, char **argv) {
     int heightmapsInRow = 1;
     int planeWidth = 1024;
@@ -170,12 +189,86 @@ int main(int argc, char **argv) {
     if(argc >= 7)
         TileGeometry::tileSize = std::stoi(argv[6]);
 
-    std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);
-
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
     ImGui_ImplGlfwGL3_Init(window, false);
+
+    Img accessibleDataImg("img/Continent_def.gif", 3);
     
+    class Quad : public Drawable {     
+    private:
+        GLuint texId;
+    public:
+        Quad(Img& img) : Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl") {
+            const float screenRatio = (float)Window::width / (float)Window::height;
+            const float imgRatio = img.GetSizeX() / img.GetSizeY();
+            std::cout << imgRatio << std::endl;
+            float modX = 0, modY = 0;
+            if(screenRatio > imgRatio) {
+                float yFactor = (float)Window::height / (float)img.GetSizeY();
+                int shrinkedImgX = img.GetSizeX() * yFactor;
+                int xDiff = Window::width - shrinkedImgX;
+                modX = xDiff / (float)Window::width;
+            } else if(imgRatio > screenRatio) {
+                float xFactor = (float)Window::width / (float)img.GetSizeX();
+                int shrinkedImgY = img.GetSizeY() * xFactor;
+                int yDiff = Window::height - shrinkedImgY;
+                modY = yDiff / (float)Window::height;
+            }
+            std::cout << modX << " " << modY << std::endl;
+            const GLfloat vertices[] {
+                // vertices  // tex coords
+                -1 + modX,  1 - modY, 0,   0, 0,
+                -1 + modX, -1 + modY, 0,   0, 1,
+                 1 - modX,  1 - modY, 0,   1, 0,
+                 1 - modX,  1 - modY, 0,   1, 0,
+                -1 + modX, -1 + modY, 0,   0, 1,
+                 1 - modX, -1 + modY, 0,   1, 1            
+            };
+            BindVbo();
+            GL_CHECK(glBufferData(
+                GL_ARRAY_BUFFER,
+                sizeof(vertices),
+                &vertices,
+                GL_STATIC_DRAW
+            ));
+            BindVao();
+            GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0)); 
+            GL_CHECK(glEnableVertexAttribArray(0));
+            GL_CHECK(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 
+                                           (GLvoid*)(3 * sizeof(GLfloat)))); 
+            GL_CHECK(glEnableVertexAttribArray(1));
+            UnbindVao();
+            UnbindVbo();
+
+            GL_CHECK(glGenTextures(1, &texId));
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, texId));
+            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, img.GetSizeX(), img.GetSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData()));
+
+            shader.Uniform1i("screenTexture", 4);
+        }
+
+        ~Quad() {
+            glDeleteTextures(1, &texId);
+        }
+
+        void Draw() {
+            shader.Use();
+            BindVao();
+            GL_CHECK(glActiveTexture(GL_TEXTURE4));
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, texId));
+            GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
+            UnbindVao();
+        }
+    };
+
+    Quad accessibleDataTexturedQuad(accessibleDataImg);
+
+    std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
     LODPlane lodPlane(heightmaps, planeWidth);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
@@ -328,6 +421,8 @@ int main(int argc, char **argv) {
             topViewScreenQuad.Draw();
 
         // nmq.Draw();
+
+        accessibleDataTexturedQuad.Draw();
 
         ImGui::Render();
         lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        

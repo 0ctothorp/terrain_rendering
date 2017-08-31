@@ -27,16 +27,16 @@ public:
         float ysize = xsize * screenRatio;
         float minus = 0.65f;
         GLfloat viewQuad[] {
-            -1.0f, 1 - ysize - minus, 0.0f, 0.0f, 0.0f,
             -1.0f, 1.0f - minus, 0.0f, 0.0f, 1.0f,
+            -1.0f, 1 - ysize - minus, 0.0f, 0.0f, 0.0f,
             -1 + xsize, 1.0f - minus, 0.0f, 1.0f, 1.0f,
             -1 + xsize, 1.0f - minus, 0.0f, 1.0f, 1.0f,
-            -1 + xsize, 1 - ysize - minus, 0.0f, 1.0f, 0.0f,
-            -1.0f, 1 - ysize - minus, 0.0f, 0.0f, 0.0f
+            -1.0f, 1 - ysize - minus, 0.0f, 0.0f, 0.0f,
+            -1 + xsize, 1 - ysize - minus, 0.0f, 1.0f, 0.0f
         };
         GL_CHECK(glBufferData(
             GL_ARRAY_BUFFER,
-            sizeof(viewQuad) * sizeof(GLfloat),
+            sizeof(viewQuad),
             &viewQuad,
             GL_STATIC_DRAW
         ));
