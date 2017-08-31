@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <cpr/cpr.h>
 
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
@@ -17,13 +18,14 @@
 #include "topCamera.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
-#include "lodPlane.hpp"
+// #include "lodPlane.hpp"
 #include "window.hpp"
 #include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
 #include "cmdLineArgs.hpp"
 #include "tileGeometry.hpp"
 #include "normalMapQuad.hpp"
+#include "framebufferSizeChangedEvent.hpp"
 
 
 bool keys[GLFW_KEY_LAST]{false};
@@ -85,6 +87,16 @@ void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
     mouse.ScrollCallback(yoffset);
 }
 
+void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    GL_CHECK(glViewport(0, 0, width, height));
+    FramebufferSizeChangedEvent::Fire();
+}
+
+void WindowSizeCallback(GLFWwindow* window, int width, int height) {
+    Window::width = width;
+    Window::height = height;
+}
+
 GLFWwindow* GetGLFWwindow(const char *name){
     GLFWwindow* window;
     if(!glfwInit()) {
@@ -114,7 +126,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
     } else {
         window = glfwCreateWindow(Window::width, Window::height, name, nullptr, nullptr);
     }
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if(window == nullptr) {
         std::cerr << "Failed to open GLFW window. .... \n";
@@ -145,6 +157,8 @@ GLFWwindow* GetGLFWwindow(const char *name){
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetScrollCallback(window, MouseScrollCallback);
+    glfwSetWindowSizeCallback(window, WindowSizeCallback);
+    glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 
     return window;
 }
@@ -170,6 +184,10 @@ public:
     unsigned char* GetData() { return data; }
 };
 
+struct HeightmapDownloadInfo {
+    int lat = 50, lon = 15, size = 4;
+};
+
 int main(int argc, char **argv) {
     int heightmapsInRow = 1;
     int planeWidth = 1024;
@@ -193,44 +211,63 @@ int main(int argc, char **argv) {
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
     ImGui_ImplGlfwGL3_Init(window, false);
 
-    Img accessibleDataImg("img/Continent_def.gif", 3);
+    Img availableDataImg("img/Continent_def.gif", 3);
     
-    class Quad : public Drawable {     
+    class Quad : public Drawable, public FramebufferSizeChangeListener {     
     private:
         GLuint texId;
-    public:
-        Quad(Img& img) : Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl") {
+        GLfloat vertices[30] {
+            // vertices  // tex coords
+            -1,  1, 0,   0, 0,
+            -1, -1, 0,   0, 1,
+             1,  1, 0,   1, 0,
+             1,  1, 0,   1, 0,
+            -1, -1, 0,   0, 1,
+             1, -1, 0,   1, 1            
+        };
+        float imgRatio;
+        int imgSizeX, imgSizeY;
+
+        void PreserveImgRatio() {
             const float screenRatio = (float)Window::width / (float)Window::height;
-            const float imgRatio = img.GetSizeX() / img.GetSizeY();
-            std::cout << imgRatio << std::endl;
             float modX = 0, modY = 0;
             if(screenRatio > imgRatio) {
-                float yFactor = (float)Window::height / (float)img.GetSizeY();
-                int shrinkedImgX = img.GetSizeX() * yFactor;
+                float yFactor = (float)Window::height / (float)imgSizeY;
+                int shrinkedImgX = imgSizeX * yFactor;
                 int xDiff = Window::width - shrinkedImgX;
                 modX = xDiff / (float)Window::width;
             } else if(imgRatio > screenRatio) {
-                float xFactor = (float)Window::width / (float)img.GetSizeX();
-                int shrinkedImgY = img.GetSizeY() * xFactor;
+                float xFactor = (float)Window::width / (float)imgSizeX;
+                int shrinkedImgY = imgSizeY * xFactor;
                 int yDiff = Window::height - shrinkedImgY;
                 modY = yDiff / (float)Window::height;
             }
-            std::cout << modX << " " << modY << std::endl;
-            const GLfloat vertices[] {
-                // vertices  // tex coords
-                -1 + modX,  1 - modY, 0,   0, 0,
-                -1 + modX, -1 + modY, 0,   0, 1,
-                 1 - modX,  1 - modY, 0,   1, 0,
-                 1 - modX,  1 - modY, 0,   1, 0,
-                -1 + modX, -1 + modY, 0,   0, 1,
-                 1 - modX, -1 + modY, 0,   1, 1            
-            };
+            vertices[0] = vertices[5] = vertices[20] = -1 + modX;
+            vertices[10] = vertices[15] = vertices[25] = 1 - modX;
+            vertices[1] = vertices[11] = vertices[16] = 1 - modY;
+            vertices[6] = vertices[21] = vertices[26] = -1 + modY;
+        }
+
+        void ModifyBuffer() {
+            PreserveImgRatio();
+            BindVbo();
+            GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices));
+            UnbindVbo();
+        }
+
+    public:
+        Quad(Img& img) 
+        : Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl") {
+            imgSizeX = img.GetSizeX();
+            imgSizeY = img.GetSizeY(); 
+            imgRatio = imgSizeX / imgSizeY;
+            PreserveImgRatio();
             BindVbo();
             GL_CHECK(glBufferData(
                 GL_ARRAY_BUFFER,
                 sizeof(vertices),
                 &vertices,
-                GL_STATIC_DRAW
+                GL_DYNAMIC_DRAW
             ));
             BindVao();
             GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0)); 
@@ -250,6 +287,8 @@ int main(int argc, char **argv) {
             GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, img.GetSizeX(), img.GetSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData()));
 
             shader.Uniform1i("screenTexture", 4);
+
+            FramebufferSizeChangedEvent::Register(this);
         }
 
         ~Quad() {
@@ -264,22 +303,26 @@ int main(int argc, char **argv) {
             GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
             UnbindVao();
         }
+
+        void OnFramebufferSizeChange() {
+            ModifyBuffer();
+        }
     };
 
-    Quad accessibleDataTexturedQuad(accessibleDataImg);
+    Quad availableDataTexturedQuad(availableDataImg);
 
     std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
-    LODPlane lodPlane(heightmaps, planeWidth);
+    // LODPlane lodPlane(heightmaps, planeWidth);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
-    NormalMapQuad nmq(lodPlane.GetNormalMapTex());
+    // NormalMapQuad nmq(lodPlane.GetNormalMapTex());
 
-    lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-    lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-    lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
-    lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+    // lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+    // lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+    // lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+    // lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
 
     std::srand(std::time(0));
     float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
@@ -302,6 +345,8 @@ int main(int argc, char **argv) {
     int lightingType = Light_None;
     int prevLightingType = lightingType;
 
+    HeightmapDownloadInfo heightmapDownloadInfo;
+
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
         deltaTime = time - prevFrameTime;
@@ -317,58 +362,58 @@ int main(int argc, char **argv) {
         glfwPollEvents();
         ImGui_ImplGlfwGL3_NewFrame();
 
-        {
-            ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
-            ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
-            ImGuiWindowFlags infoWindowFlags = 0;
-            infoWindowFlags |= ImGuiWindowFlags_NoResize;
-            infoWindowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-            ImGui::SetNextWindowPos(ImVec2(Window::width - infoWindowWidth - 10, 10), ImGuiSetCond_Always);
-            ImGui::Begin("Info", &show_info_window, infoWindowFlags);
-            infoWindowWidth = ImGui::GetWindowWidth();
-            ImGui::Text("FPS: %d", fps);
-            ImGui::Separator();
-            ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
-            ImGui::End();
-        }
+        // {
+        //     ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
+        //     ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
+        //     ImGuiWindowFlags infoWindowFlags = 0;
+        //     infoWindowFlags |= ImGuiWindowFlags_NoResize;
+        //     infoWindowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+        //     ImGui::SetNextWindowPos(ImVec2(Window::width - infoWindowWidth - 10, 10), ImGuiSetCond_Always);
+        //     ImGui::Begin("Info", &show_info_window, infoWindowFlags);
+        //     infoWindowWidth = ImGui::GetWindowWidth();
+        //     ImGui::Text("FPS: %d", fps);
+        //     ImGui::Separator();
+        //     ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
+        //     ImGui::End();
+        // }
         
-        int settingsWindowWidth = 325;
-        int settingsWindowHeight = 350;
-        {
-            ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, Window::height - settingsWindowHeight - 10), ImGuiSetCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, settingsWindowHeight), ImGuiSetCond_FirstUseEver);
-            ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
-            ImGuiWindowFlags settingsWindowFlags = 0;
-            ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
-            ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again "
-                               "to lock cursor and get back camera control.");
+        // int settingsWindowWidth = 325;
+        // int settingsWindowHeight = 350;
+        // {
+        //     ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, Window::height - settingsWindowHeight - 10), ImGuiSetCond_FirstUseEver);
+        //     ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, settingsWindowHeight), ImGuiSetCond_FirstUseEver);
+        //     ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
+        //     ImGuiWindowFlags settingsWindowFlags = 0;
+        //     ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
+        //     ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again "
+        //                        "to lock cursor and get back camera control.");
 
-            ImGui::Separator();
+        //     ImGui::Separator();
 
-            ImGui::Checkbox("Wireframe (R)", &wireframeMode);
-            ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
-            ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
-            ImGui::Checkbox("Draw top view (T)", &drawTopView);
-            ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
-            ImGui::Checkbox("Color mesh levels", &debugColors);
+        //     ImGui::Checkbox("Wireframe (R)", &wireframeMode);
+        //     ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
+        //     ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
+        //     ImGui::Checkbox("Draw top view (T)", &drawTopView);
+        //     ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
+        //     ImGui::Checkbox("Color mesh levels", &debugColors);
 
-            ImGui::Separator();
+        //     ImGui::Separator();
 
-            ImGui::Text("Lighting");
-            ImGui::DragFloat3("Light position", lightPos);     
-            ImGui::RadioButton("Precalculated normals", &lightingType, Light_PrecalcNormals);
-            ImGui::RadioButton("Live calculated normals", &lightingType, Light_LivecalcNormals);
-            ImGui::RadioButton("No normals (no light)", &lightingType, Light_None);
+        //     ImGui::Text("Lighting");
+        //     ImGui::DragFloat3("Light position", lightPos);     
+        //     ImGui::RadioButton("Precalculated normals", &lightingType, Light_PrecalcNormals);
+        //     ImGui::RadioButton("Live calculated normals", &lightingType, Light_LivecalcNormals);
+        //     ImGui::RadioButton("No normals (no light)", &lightingType, Light_None);
 
-            ImGui::Separator();
+        //     ImGui::Separator();
 
-            ImGui::DragFloat("Movement speed", &mainCamera.movementSpeed);
+        //     ImGui::DragFloat("Movement speed", &mainCamera.movementSpeed);
 
-            ImGui::End();
-        }
+        //     ImGui::End();
+        // }
 
         if(debugColors != prevDebugColors) {
-            lodPlane.shader.Uniform1i("debug", (int)debugColors);
+            // lodPlane.shader.Uniform1i("debug", (int)debugColors);
         }
         prevDebugColors = debugColors;
 
@@ -381,12 +426,12 @@ int main(int argc, char **argv) {
         } 
         prevLightingType = lightingType;
 
-        lodPlane.shader.Uniform1i("lightType", lightingType);
-        lodPlane.normalsShader.Uniform1i("lightType", lightingType);
+        // lodPlane.shader.Uniform1i("lightType", lightingType);
+        // lodPlane.normalsShader.Uniform1i("lightType", lightingType);
 
         if(terrainVertexSnapping != prevTerrainVertexSnapping) {
-            lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-            lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+            // lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
+            // lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
         }
         prevTerrainVertexSnapping = terrainVertexSnapping;
 
@@ -396,36 +441,58 @@ int main(int argc, char **argv) {
         GL_CHECK(glEnable(GL_DEPTH_TEST));
 
         if(prevMeshMovementLocked != meshMovementLocked)
-            lodPlane.ToggleMeshMovementLock(mainCamera);  
+            // lodPlane.ToggleMeshMovementLock(mainCamera);  
         prevMeshMovementLocked = meshMovementLocked;
 
         if(wireframeMode)
             GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
 
-        lodPlane.DrawFrom(mainCamera);
+        // lodPlane.DrawFrom(mainCamera);
 
         if(drawTerrainNormals != prevDrawTerrainNormals)
-            lodPlane.ToggleDebugNormals();
+            // lodPlane.ToggleDebugNormals();
         prevDrawTerrainNormals = drawTerrainNormals;
 
         if(wireframeMode)
             GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
         if(drawTopView)
-            topViewFb.Draw(lodPlane, &topCam, &mainCamera);
+            // topViewFb.Draw(lodPlane, &topCam, &mainCamera);
 
-        lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
-        lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+        // lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+        // lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
 
         if(drawTopView)
             topViewScreenQuad.Draw();
 
         // nmq.Draw();
 
-        accessibleDataTexturedQuad.Draw();
+        availableDataTexturedQuad.Draw();
+
+        {
+            ImGui::Begin("Where do you want to go?");
+            ImGui::TextWrapped(
+                "The image beneath this window shows what data is available to display. "
+                "Please provide latitude and longitude of the colored square that you want to explore. "
+                "You can move this window around if you want to. "
+            );
+            ImGui::Separator();
+            ImGui::DragInt("Latitude", &heightmapDownloadInfo.lat, -170, 170);
+            ImGui::DragInt("Longitude", &heightmapDownloadInfo.lon, .25, -60, 60);
+            ImGui::Separator();
+            ImGui::TextWrapped(
+                "The size of 2 means, that the application will display a bigger square of data consisting of 2 by 2 little "
+                "squares extending to the right and the bottom of the one chosen above."
+            );
+            ImGui::InputInt("Size", &heightmapDownloadInfo.size);
+            if(ImGui::Button(" OK ")) {
+                // download heightmaps
+            }
+            ImGui::End();
+        }
 
         ImGui::Render();
-        lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        
+        // lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        
         glfwSwapBuffers(window);
     }
 
