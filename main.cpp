@@ -1,6 +1,10 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <future>
+#include <mutex>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -22,10 +26,11 @@
 #include "window.hpp"
 #include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
-#include "cmdLineArgs.hpp"
+#include "heightmapFilePaths.hpp"
 #include "tileGeometry.hpp"
 #include "normalMapQuad.hpp"
 #include "framebufferSizeChangedEvent.hpp"
+#include "uiWindow.hpp";
 
 
 bool keys[GLFW_KEY_LAST]{false};
@@ -186,7 +191,38 @@ public:
 
 struct HeightmapDownloadInfo {
     int lat = 50, lon = 15, size = 4;
+    int downloadedCount;
+    std::mutex downloadedCountMutex;
+
+    int GetTotalSize() {
+        return size * size;
+    }
 };
+
+void DownloadHeightmaps(HeightmapDownloadInfo &heightmapDownloadInfo, std::vector<std::future<void>> &downloadedFutures, std::vector<std::string>& heightmapsZips) {
+    int lat = heightmapDownloadInfo.lat,
+        lon = heightmapDownloadInfo.lon;
+    std::string filename = GetHeightmapFileNameWithPossibleNegativeLatLon(lat, lon);
+    std::vector<std::string> heightmapsFilenames = GetHeightmapsFilenamesBasedOn(filename.c_str(), heightmapDownloadInfo.size);
+
+    int counter = 0;
+    for(auto filename: heightmapsFilenames) {
+        downloadedFutures.emplace_back(cpr::GetCallback([filename, &heightmapDownloadInfo, counter, &heightmapsZips](cpr::Response r){
+            std::ofstream file("heightmaps/" + filename + ".zip");
+            file << r.text;
+            {
+                std::lock_guard<std::mutex> lock(heightmapDownloadInfo.downloadedCountMutex);
+                heightmapDownloadInfo.downloadedCount++;
+                int totalDownloadSize = heightmapDownloadInfo.GetTotalSize();
+                HeightmapDownloadProgressEvent::Fire((float)heightmapDownloadInfo.downloadedCount / totalDownloadSize);
+                if(heightmapDownloadInfo.downloadedCount == totalDownloadSize)
+                    std::cout << "downloaded all!" << std::endl;
+            }
+            heightmapsZips[counter] = r.text;
+        }, cpr::Url{"https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Eurasia/" + filename + ".zip"}));
+        counter++;
+    }
+}
 
 int main(int argc, char **argv) {
     int heightmapsInRow = 1;
@@ -311,7 +347,7 @@ int main(int argc, char **argv) {
 
     Quad availableDataTexturedQuad(availableDataImg);
 
-    std::vector<std::string> heightmaps = GetHeightmapsPathsFromCmdLine(argv[1], heightmapsInRow);    
+    std::vector<std::string> heightmaps = GetHeightmapsFilenamesBasedOn(argv[1], heightmapsInRow);    
     // LODPlane lodPlane(heightmaps, planeWidth);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
@@ -346,6 +382,12 @@ int main(int argc, char **argv) {
     int prevLightingType = lightingType;
 
     HeightmapDownloadInfo heightmapDownloadInfo;
+    std::vector< std::future<void> > downloadedFutures;
+    std::vector<std::string> heightmapsZips(heightmapDownloadInfo.size * heightmapDownloadInfo.size);
+    bool showCoordinatesInputWindow = true;
+
+    UIWindowHeightmapDownloadProgress uiHgtmapDownloadProgress;
+    HeightmapDownloadProgressEvent::Register(&uiHgtmapDownloadProgress);
 
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
@@ -469,7 +511,7 @@ int main(int argc, char **argv) {
 
         availableDataTexturedQuad.Draw();
 
-        {
+        if(showCoordinatesInputWindow) {
             ImGui::Begin("Where do you want to go?");
             ImGui::TextWrapped(
                 "The image beneath this window shows what data is available to display. "
@@ -477,7 +519,7 @@ int main(int argc, char **argv) {
                 "You can move this window around if you want to. "
             );
             ImGui::Separator();
-            ImGui::DragInt("Latitude", &heightmapDownloadInfo.lat, -170, 170);
+            ImGui::DragInt("Latitude", &heightmapDownloadInfo.lat, .25, -170, 170);
             ImGui::DragInt("Longitude", &heightmapDownloadInfo.lon, .25, -60, 60);
             ImGui::Separator();
             ImGui::TextWrapped(
@@ -486,10 +528,15 @@ int main(int argc, char **argv) {
             );
             ImGui::InputInt("Size", &heightmapDownloadInfo.size);
             if(ImGui::Button(" OK ")) {
-                // download heightmaps
+                DownloadHeightmaps(heightmapDownloadInfo, downloadedFutures, heightmapsZips);
+                showCoordinatesInputWindow = false;
+                uiHgtmapDownloadProgress.ToggleVisibility();
             }
             ImGui::End();
         }
+
+
+        uiHgtmapDownloadProgress.Draw();
 
         ImGui::Render();
         // lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        

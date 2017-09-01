@@ -5,3 +5,4 @@ heightmaps/*
 main.exe
 imgui.ini
 maketry.sh
+.vscode

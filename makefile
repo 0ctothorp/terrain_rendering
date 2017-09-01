@@ -1,6 +1,6 @@
 CXX = g++
 
-LDFLAGS = 
+LDFLAGS = -lpthread -lcurl
 WINDOWS = false
 
 ifeq ($(WINDOWS), true)
@@ -9,7 +9,7 @@ else
 	LDFLAGS += -lGL -lGLEW -lglfw
 endif
 
-CXXFLAGS = -std=c++11 -Wall
+CXXFLAGS = -std=c++11 -Wall -I~/libs/cpr/include
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
@@ -34,7 +34,7 @@ else
 endif
 
 
-$(EXE): $(OBJECTS) $(IMGUIOBJ)
+$(EXE): $(OBJECTS) $(IMGUIOBJ) ~/libs/cpr/build/lib/libcpr.a
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(IMGUI)/%.o: $(IMGUI)/%.cpp
