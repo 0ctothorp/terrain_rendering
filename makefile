@@ -1,6 +1,6 @@
 CXX = g++
 
-LDFLAGS = -lpthread -lcurl
+LDFLAGS = -lpthread -lcurl -lz
 WINDOWS = false
 
 ifeq ($(WINDOWS), true)
@@ -9,7 +9,7 @@ else
 	LDFLAGS += -lGL -lGLEW -lglfw
 endif
 
-CXXFLAGS = -std=c++11 -Wall -I~/libs/cpr/include
+CXXFLAGS = -std=c++14 -Wall -I~/libs/cpr/include
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
@@ -34,7 +34,7 @@ else
 endif
 
 
-$(EXE): $(OBJECTS) $(IMGUIOBJ) ~/libs/cpr/build/lib/libcpr.a
+$(EXE): $(OBJECTS) $(IMGUIOBJ) ~/libs/cpr/build/lib/libcpr.a /usr/local/lib/libZipper-static.a
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(IMGUI)/%.o: $(IMGUI)/%.cpp

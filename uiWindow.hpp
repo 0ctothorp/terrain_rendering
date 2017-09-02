@@ -2,7 +2,7 @@
 
 #include "libs/imgui/imgui.h"
 
-#include "heightmapDownloadProgressEvent.hpp"
+#include "events.hpp"
 
 
 class UIWindow {
@@ -18,7 +18,7 @@ public:
     void ToggleVisibility() { isActive = !isActive; }
 };
 
-class UIWindowHeightmapDownloadProgress : public UIWindow, public HeightmapDownloadProgressListener {
+class UIWindowHeightmapDownloadProgress : public UIWindow {
 private:
     float progress = 0;
 
@@ -29,23 +29,12 @@ private:
     };
 
 public:
-    void OnHeightmapDownloadProgress(float _progress) {
-        progress = _progress;
-    }
-};
-
-class UIWindowHeightmapUnzipProgress : public UIWindow {
-private:
-    float progress = 0;
-
-    virtual void Render() {
-        ImGui::Begin("Unzipping heightmaps");
-        ImGui::ProgressBar(progress);
-        ImGui::End();
-    };
-
-public:
-    void OnHeightmapUnzipProgress(float _progress) {
-        progress = _progress;
+    UIWindowHeightmapDownloadProgress() {
+        SingletonEvent<HeightmapsDownloadProgressEvent, float>::Instance()->Register([this](float progress){
+            this->progress = progress;
+        });        
+        SingletonEvent<HeightmapsUnzippedEvent>::Instance()->Register([this](){
+            this->ToggleVisibility();
+        });
     }
 };

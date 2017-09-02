@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cpr/cpr.h>
+#include <zipper/unzipper.h>
 
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
@@ -29,8 +30,8 @@
 #include "heightmapFilePaths.hpp"
 #include "tileGeometry.hpp"
 #include "normalMapQuad.hpp"
-#include "framebufferSizeChangedEvent.hpp"
-#include "uiWindow.hpp";
+#include "uiWindow.hpp"
+#include "events.hpp"
 
 
 bool keys[GLFW_KEY_LAST]{false};
@@ -94,7 +95,7 @@ void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {
 
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
     GL_CHECK(glViewport(0, 0, width, height));
-    FramebufferSizeChangedEvent::Fire();
+    SingletonEvent<FramebufferSizeChangedEvent>::Instance()->Fire();
 }
 
 void WindowSizeCallback(GLFWwindow* window, int width, int height) {
@@ -199,7 +200,7 @@ struct HeightmapDownloadInfo {
     }
 };
 
-void DownloadHeightmaps(HeightmapDownloadInfo &heightmapDownloadInfo, std::vector<std::future<void>> &downloadedFutures, std::vector<std::string>& heightmapsZips) {
+std::vector<std::string> DownloadHeightmaps(HeightmapDownloadInfo &heightmapDownloadInfo, std::vector<std::future<void>> &downloadedFutures) {
     int lat = heightmapDownloadInfo.lat,
         lon = heightmapDownloadInfo.lon;
     std::string filename = GetHeightmapFileNameWithPossibleNegativeLatLon(lat, lon);
@@ -207,21 +208,22 @@ void DownloadHeightmaps(HeightmapDownloadInfo &heightmapDownloadInfo, std::vecto
 
     int counter = 0;
     for(auto filename: heightmapsFilenames) {
-        downloadedFutures.emplace_back(cpr::GetCallback([filename, &heightmapDownloadInfo, counter, &heightmapsZips](cpr::Response r){
+        downloadedFutures.emplace_back(cpr::GetCallback([filename, &heightmapDownloadInfo, counter](cpr::Response r){
             std::ofstream file("heightmaps/" + filename + ".zip");
             file << r.text;
             {
                 std::lock_guard<std::mutex> lock(heightmapDownloadInfo.downloadedCountMutex);
                 heightmapDownloadInfo.downloadedCount++;
                 int totalDownloadSize = heightmapDownloadInfo.GetTotalSize();
-                HeightmapDownloadProgressEvent::Fire((float)heightmapDownloadInfo.downloadedCount / totalDownloadSize);
-                if(heightmapDownloadInfo.downloadedCount == totalDownloadSize)
-                    std::cout << "downloaded all!" << std::endl;
+                SingletonEvent<HeightmapsDownloadProgressEvent, float>::Instance()->Fire(
+                    (float)heightmapDownloadInfo.downloadedCount / totalDownloadSize
+                );
             }
-            heightmapsZips[counter] = r.text;
+            SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Fire(counter);
         }, cpr::Url{"https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Eurasia/" + filename + ".zip"}));
         counter++;
     }
+    return heightmapsFilenames;
 }
 
 int main(int argc, char **argv) {
@@ -249,7 +251,7 @@ int main(int argc, char **argv) {
 
     Img availableDataImg("img/Continent_def.gif", 3);
     
-    class Quad : public Drawable, public FramebufferSizeChangeListener {     
+    class Quad : public Drawable {     
     private:
         GLuint texId;
         GLfloat vertices[30] {
@@ -324,7 +326,9 @@ int main(int argc, char **argv) {
 
             shader.Uniform1i("screenTexture", 4);
 
-            FramebufferSizeChangedEvent::Register(this);
+            SingletonEvent<FramebufferSizeChangedEvent>::Instance()->Register([this](){
+                this->OnFramebufferSizeChange();
+            });
         }
 
         ~Quad() {
@@ -382,12 +386,32 @@ int main(int argc, char **argv) {
     int prevLightingType = lightingType;
 
     HeightmapDownloadInfo heightmapDownloadInfo;
-    std::vector< std::future<void> > downloadedFutures;
+    std::vector<std::future<void>> downloadedFutures;
     std::vector<std::string> heightmapsZips(heightmapDownloadInfo.size * heightmapDownloadInfo.size);
-    bool showCoordinatesInputWindow = true;
 
     UIWindowHeightmapDownloadProgress uiHgtmapDownloadProgress;
-    HeightmapDownloadProgressEvent::Register(&uiHgtmapDownloadProgress);
+
+    
+
+    int unzippedCount = 0;
+    std::mutex unzippedCountMutex;
+    std::vector<std::string> heightmapsFilenames;
+    SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Register([&heightmapsFilenames, &unzippedCountMutex, &unzippedCount, &heightmapDownloadInfo](int index){
+        std::cout << "Unzipping " + heightmapsFilenames[index] + ".zip" << std::endl;
+        try {
+            zipper::Unzipper unzipper("heightmaps/" + heightmapsFilenames[index] + ".zip");
+            unzipper.extract("heightmaps");
+            std::lock_guard<std::mutex> lock(unzippedCountMutex);
+            unzippedCount++;
+        } catch(const std::runtime_error &e) {
+            std::cerr << e.what() << std::endl;
+        }
+        std::cout << "Unzipped " + heightmapsFilenames[index] + ".zip" << std::endl;        
+        if(unzippedCount == heightmapDownloadInfo.GetTotalSize())
+            SingletonEvent<HeightmapsUnzippedEvent>::Instance()->Fire();
+    });
+
+    bool showCoordinatesInputWindow = true;
 
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
@@ -528,7 +552,7 @@ int main(int argc, char **argv) {
             );
             ImGui::InputInt("Size", &heightmapDownloadInfo.size);
             if(ImGui::Button(" OK ")) {
-                DownloadHeightmaps(heightmapDownloadInfo, downloadedFutures, heightmapsZips);
+                heightmapsFilenames = DownloadHeightmaps(heightmapDownloadInfo, downloadedFutures);
                 showCoordinatesInputWindow = false;
                 uiHgtmapDownloadProgress.ToggleVisibility();
             }
