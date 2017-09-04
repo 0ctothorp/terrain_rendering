@@ -1,3 +1,5 @@
+VERBOSE = 1
+
 CXX = g++
 
 LDFLAGS = -lpthread -lcurl -lz
@@ -9,7 +11,7 @@ else
 	LDFLAGS += -lGL -lGLEW -lglfw
 endif
 
-CXXFLAGS = -std=c++14 -Wall 
+CXXFLAGS = -std=c++14 -Wall -I ./libs/cpr/include -I ./libs/zipper/build/zipper
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
@@ -33,8 +35,15 @@ else
 	LDFLAGS += -O3
 endif
 
+default: $(EXE)
 
-$(EXE): $(OBJECTS) $(IMGUIOBJ) /usr/local/lib/libcpr.a /usr/local/lib/libZipper-static.a
+build-submodules:
+	git submodule update --init --recursive
+	cd libs/zipper; mkdir -p build; cd build; cmake ..; make; \
+	cd ..; cd ..; \
+	cd cpr; mkdir -p build; cd build; cmake ..; make;
+
+$(EXE): $(OBJECTS) $(IMGUIOBJ) ./libs/cpr/build/lib/libcpr.a ./libs/zipper/build/libZipper-static.a
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(IMGUI)/%.o: $(IMGUI)/%.cpp

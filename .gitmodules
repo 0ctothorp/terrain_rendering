@@ -1,0 +1,6 @@
+[submodule "libs/cpr"]
+	path = libs/cpr
+	url = https://github.com/whoshuu/cpr.git
+[submodule "libs/zipper"]
+	path = libs/zipper
+	url = https://github.com/sebastiandev/zipper.git
