@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include <GL/glew.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -8,6 +9,7 @@
 #include "mainCamera.hpp"
 #include "tileMesh.hpp"
 #include "shader.hpp"
+#include "hmParser.hpp"
 
 
 /* Klasa służąca do utworzenia całej struktury LOD siatki terenu i do jej rysowania. */
@@ -43,9 +45,12 @@ private:
        odpowiednio je konfiguruje. 'heightmapsPaths' zawiera ścieżki do map wysokości,
        które mają zostac połączone i stworzona z nich tekstura. */
     void SetHeightmap(const std::vector<std::string>& heightmapsPaths);
+    void SetHeightmap(const std::unique_ptr<HMParser> &hmParserUptr);
     /* Ustawia w shaderach 'shader' oraz 'normalsShader' niektóre zmienne z 
        modyfikatorem uniform. */
     void SetUniforms();
+    /* Ustawia teksturę 1D zawierającą kolory dla terenu. */
+    void SetColorsTexture();
 
 public:
     /* Wyznacza, jak duży obszar kafelka terenu ma być przeznaczony na przekształcanie do wyższego
@@ -60,6 +65,8 @@ public:
        utworzona ma być jedna heightmapa. Drugi argument to żądana szerokość siatki terenu. Siatka
        jest kwadratem. */
     LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth);
+    // LODPlane(std::unique_ptr<HMParser> const &hmParserUptr, int planeWidth = 1024);
+    LODPlane(const std::unique_ptr<HMParser> &hmParserUptr, int lodLevels, int tileSize);
     /* Destruktor. Usuwa obiekty OpenGL utworzone w konstruktorze takie, jak 'heightmapTex',
        'normalMapTex' oraz 'terrainColorsTex'. */
     ~LODPlane();

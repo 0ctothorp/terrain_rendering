@@ -1,7 +1,6 @@
 #include <sstream>
 #include <iomanip>
-//tmp
-#include <iostream>
+#include <fstream>
 
 #include "heightmapFilePaths.hpp"
 
@@ -72,4 +71,14 @@ std::string GetHeightmapFileNameWithPossibleNegativeLatLon(int lat, int lon) {
         lonDir = 'E';
     }
     return GetHeightmapFileName(tmplat, tmplon, latDir, lonDir);
+}
+
+std::vector<std::string> GetFilesToDownloadFrom(const std::vector<std::string>& filenames) {
+    std::vector<std::string> toDownload;
+    for(auto file: filenames) {
+        std::ifstream fs("heightmaps/" + file);
+        if(!fs.is_open())
+            toDownload.push_back(file);
+    }
+    return toDownload;
 }

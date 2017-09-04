@@ -77,11 +77,11 @@ void MainCamera::ChangeMovementSpeed(int change) {
 
 bool MainCamera::IsInsideFrustum(const glm::vec3 &point1, const glm::vec3 &point2, 
                                  const glm::vec3 &point3, const glm::vec3 &point4) const {
-    const glm::vec3 y100(0, 100, 0);
-    const glm::vec3 point12 = point1 + y100;
-    const glm::vec3 point22 = point2 + y100;
-    const glm::vec3 point32 = point3 + y100;
-    const glm::vec3 point42 = point4 + y100;
+    const glm::vec3 yoff(0, 100, 0);
+    const glm::vec3 point12 = point1 + yoff;
+    const glm::vec3 point22 = point2 + yoff;
+    const glm::vec3 point32 = point3 + yoff;
+    const glm::vec3 point42 = point4 + yoff;
     std::array<glm::vec3, 8> points{point1, point2, point3, point4,
                                     point12, point22, point32, point42};
     return frustum.IsCubeInside(points);

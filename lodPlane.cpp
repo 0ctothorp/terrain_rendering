@@ -1,11 +1,12 @@
 #include <cmath>
+//tmp
+#include <iostream>
 
 #include <glm/gtc/type_ptr.hpp>
 
 #include "lodPlane.hpp"
 #include "tileGeometry.hpp"
 #include "glDebug.hpp"
-#include "hmParser.hpp"
 #include "edgeMorph.hpp"
 
 
@@ -17,31 +18,32 @@ LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWid
     CreateTiles();
     SetUniforms();
     SetHeightmap(heightmapsPaths);
+    SetColorsTexture();
+}
 
-    int colors = 11;
-    unsigned char terrainColors[colors * 3] {
-        50, 120, 150,
-        79, 198, 79,
-        59, 225, 59,
-        150, 255, 0,
-        210, 255, 0,
-        255, 246, 0,
-        255, 198, 0,
-        255, 174, 0,
-        255, 144, 0,
-        255, 114, 0,
-        255, 60, 0
-    };
-    shader.Uniform1i("terrainColors", 3);
-    GL_CHECK(glGenTextures(1, &terrainColorsTex));
-    GL_CHECK(glBindTexture(GL_TEXTURE_1D, terrainColorsTex));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    GL_CHECK(glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, colors, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-                          terrainColors));
+// LODPlane::LODPlane(std::unique_ptr<HMParser> const &hmParserUptr, int planeWidth)
+// : planeWidth(planeWidth)
+// , shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
+// , normalsShader("shaders/planeVertexShader.glsl", "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl") {
+//     CalcLayersNumber();
+//     CreateTiles();
+//     SetUniforms();
+//     SetHeightmap(hmParserUptr);
+//     SetColorsTexture();
+// }
+
+LODPlane::LODPlane(const std::unique_ptr<HMParser> &hmParserUptr, int lodLevels, int tileSize)
+: shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
+, normalsShader("shaders/planeVertexShader.glsl", "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl") {
+    TileGeometry::tileSize = 1 << tileSize;
+    layers = lodLevels;
+    planeWidth = 0;
+    int pow2 = 1 << (layers + 1);
+    planeWidth = pow2 * TileGeometry::tileSize;
+    CreateTiles();
+    SetUniforms();
+    SetHeightmap(hmParserUptr);
+    SetColorsTexture();
 }
 
 LODPlane::~LODPlane() {
@@ -104,7 +106,7 @@ void LODPlane::SetUniforms() {
     normalsShader.Uniform1i("meshSize", planeWidth);
 }
 
-void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
+void LODPlane::SetHeightmap(const std::vector<std::string> &heightmapsPaths) {
     shader.Uniform1i("heightmap", 0);
     GL_CHECK(glGenTextures(1, &heightmapTex));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
@@ -134,6 +136,64 @@ void LODPlane::SetHeightmap(const std::vector<std::string>& heightmapsPaths) {
 
     normalsShader.Uniform1i("heightmap", 0);    
     normalsShader.Uniform1i("normalMap", 2);
+}
+
+void LODPlane::SetHeightmap(const std::unique_ptr<HMParser> &hmParserUptr) {
+    shader.Uniform1i("heightmap", 0);
+    GL_CHECK(glGenTextures(1, &heightmapTex));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, heightmapTex));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, hmParserUptr->GetTotalWidth(), 
+                          hmParserUptr->GetTotalWidth(), 0, GL_RED_INTEGER, GL_SHORT, 
+                          hmParserUptr->GetDataPtr()->data()));
+    
+    shader.Uniform1i("normalMap", 2);
+    GL_CHECK(glGenTextures(1, &normalMapTex));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, normalMapTex));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8_SNORM, hmParserUptr->GetTotalWidth(), 
+                          hmParserUptr->GetTotalWidth(), 0, GL_RGB, GL_BYTE, 
+                          hmParserUptr->GetNormalsPtr()->data()));
+
+
+    normalsShader.Uniform1i("heightmap", 0);    
+    normalsShader.Uniform1i("normalMap", 2);
+}
+
+void LODPlane::SetColorsTexture() {
+    int colors = 11;
+    unsigned char terrainColors[colors * 3] {
+        50, 120, 150,
+        79, 198, 79,
+        59, 225, 59,
+        150, 255, 0,
+        210, 255, 0,
+        255, 246, 0,
+        255, 198, 0,
+        255, 174, 0,
+        255, 144, 0,
+        255, 114, 0,
+        255, 60, 0
+    };
+    shader.Uniform1i("terrainColors", 3);
+    GL_CHECK(glGenTextures(1, &terrainColorsTex));
+    GL_CHECK(glBindTexture(GL_TEXTURE_1D, terrainColorsTex));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    GL_CHECK(glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, colors, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+                          terrainColors));
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {

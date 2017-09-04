@@ -74,6 +74,7 @@ private:
 public:
     // Szerokość jednej heightmapy typu SRTM3, czyli ile wartości mieści się "na jednym boku".
     const int width = 1201;
+    int highestPoint = 0;
     
     // 'heightmaps' - ścieżki do plików map wysokości.
     HMParser(const std::vector<std::string>& heightmaps);

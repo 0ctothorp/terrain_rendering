@@ -20,3 +20,7 @@ std::string GetHeightmapFileName(int lat, int lon, char latDirection, char lonDi
    o jaki kierunek chodzi. Przydatna przy interpretacji inputu z okienka wyboru współrzędnych
    na początku programu. */
 std::string GetHeightmapFileNameWithPossibleNegativeLatLon(int lat, int lon);
+
+/* Zwraca wektor nazw plików, które należy ściągnąć spośród podanych jako argument, bo nie
+   ma ich na dysku. */
+std::vector<std::string> GetFilesToDownloadFrom(const std::vector<std::string>& filenames);

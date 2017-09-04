@@ -1,10 +1,10 @@
 #include <iostream>
 #include <ctime>
-#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <future>
 #include <mutex>
+#include <memory>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -15,15 +15,12 @@
 
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_GIF
-#include "libs/stb/stb_image.h"
 
 #include "mainCamera.hpp"
 #include "topCamera.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
-// #include "lodPlane.hpp"
+#include "lodPlane.hpp"
 #include "window.hpp"
 #include "topViewFb.hpp"
 #include "topViewScreenQuad.hpp"
@@ -32,15 +29,22 @@
 #include "normalMapQuad.hpp"
 #include "uiWindow.hpp"
 #include "events.hpp"
+#include "hmParser.hpp"
+#include "heightmapDownloadInfo.hpp"
+#include "terrainRenderingSettings.hpp"
+#include "img.hpp"
+#include "utils.hpp"
+#include "terrainSettings.hpp"
+#include "mapQuad.hpp"
 
+
+std::string baseUrl = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/";
+std::array<std::string, 6> continentUrls { "Eurasia/", "Africa/", "Australia/", "Islands/", "North_America/", "South_America/" };
 
 bool keys[GLFW_KEY_LAST]{false};
-bool cursor = false;
-bool wireframeMode = false;
-bool meshMovementLocked = false;
-bool drawTerrainNormals = false;
-bool drawTopView = false;
-bool terrainVertexSnapping = true;
+bool cursor = true;
+
+TerrainRenderingSettings settings;
 MainCamera mainCamera;
 Mouse mouse((float)Window::width / 2.0f, (float)Window::height / 2.0f, &mainCamera);
 
@@ -60,19 +64,19 @@ void KeyCallback(GLFWwindow* window, int key, int, int action, int) {
         keys[key] = true;
         switch(key) {
             case GLFW_KEY_R:
-                wireframeMode = !wireframeMode;
+                settings.wireframeMode = !settings.wireframeMode;
                 break;
             case GLFW_KEY_L:
-                meshMovementLocked = !meshMovementLocked;
+                settings.meshMovementLocked = !settings.meshMovementLocked;
                 break;
             case GLFW_KEY_N:
-                drawTerrainNormals = !drawTerrainNormals;
+                settings.drawTerrainNormals = !settings.drawTerrainNormals;
                 break;
             case GLFW_KEY_T:
-                drawTopView = !drawTopView;
+                settings.drawTopView = !settings.drawTopView;
                 break;
             case GLFW_KEY_V:
-                terrainVertexSnapping = !terrainVertexSnapping;
+                settings.terrainVertexSnapping = !settings.terrainVertexSnapping;
             default:
                 break;
         }
@@ -169,249 +173,158 @@ GLFWwindow* GetGLFWwindow(const char *name){
     return window;
 }
 
-int random(int min, int max) {
-    float rand = std::rand() / (float)RAND_MAX;
-    return min + (max - min) * rand;
-}
-
-class Img {
-private:
-    unsigned char* data;
-    int sizeX, sizeY, channels;
-public:
-    Img(std::string filePath, int request_components=0) {
-        data = stbi_load(filePath.c_str(), &sizeX, &sizeY, &channels, request_components);
-    }
-
-    ~Img()                   { stbi_image_free(data); }
-    int GetSizeX()           { return sizeX; }
-    int GetSizeY()           { return sizeY; }
-    int GetChannels()        { return channels; }
-    unsigned char* GetData() { return data; }
-};
-
-struct HeightmapDownloadInfo {
-    int lat = 50, lon = 15, size = 4;
-    int downloadedCount;
-    std::mutex downloadedCountMutex;
-
-    int GetTotalSize() {
-        return size * size;
-    }
-};
-
-std::vector<std::string> DownloadHeightmaps(HeightmapDownloadInfo &heightmapDownloadInfo, std::vector<std::future<void>> &downloadedFutures) {
+/* Rozpoczyna proces asynchronicznego pobierania i rozpakowywania danych wysokości terenu w oparciu o 
+   informacje zawarte w 'heightmapDownloadInfo'. 'downloadedFutures' służy do przechowania obiektów
+   typu 'std::future', które odpowiedzialne są za uruchomienie wątków i przechowywanie wyników operacji. 
+   Jeśli pobieranie danych nie jest potrzebne, bo znajdują się one na dysku użytkownika wywoływane jest
+   w osobnym wątku zdarzenie ukończenia rozpakowywania danych. */
+void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vector<std::future<void>>& downloadedFutures, std::vector<std::string>& heightmapsFilenames) {
     int lat = heightmapDownloadInfo.lat,
         lon = heightmapDownloadInfo.lon;
     std::string filename = GetHeightmapFileNameWithPossibleNegativeLatLon(lat, lon);
-    std::vector<std::string> heightmapsFilenames = GetHeightmapsFilenamesBasedOn(filename.c_str(), heightmapDownloadInfo.size);
+    heightmapsFilenames = GetHeightmapsFilenamesBasedOn(filename.c_str(), heightmapDownloadInfo.size);
+    std::vector<std::string> filesToDownload = GetFilesToDownloadFrom(heightmapsFilenames);
 
-    int counter = 0;
-    for(auto filename: heightmapsFilenames) {
-        downloadedFutures.emplace_back(cpr::GetCallback([filename, &heightmapDownloadInfo, counter](cpr::Response r){
-            std::ofstream file("heightmaps/" + filename + ".zip");
-            file << r.text;
-            {
-                std::lock_guard<std::mutex> lock(heightmapDownloadInfo.downloadedCountMutex);
-                heightmapDownloadInfo.downloadedCount++;
-                int totalDownloadSize = heightmapDownloadInfo.GetTotalSize();
-                SingletonEvent<HeightmapsDownloadProgressEvent, float>::Instance()->Fire(
-                    (float)heightmapDownloadInfo.downloadedCount / totalDownloadSize
-                );
-            }
-            SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Fire(counter);
-        }, cpr::Url{"https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Eurasia/" + filename + ".zip"}));
-        counter++;
+    if(filesToDownload.size() == 0) {
+        downloadedFutures.emplace_back(std::async(std::launch::async, [](){
+            SingletonEvent<HeightmapsUnzippedEvent>::Instance()->Fire();
+        }));
+        return;
     }
-    return heightmapsFilenames;
+
+    bool errorOccurred = false;
+    for(int i = 0; i < filesToDownload.size(); i++) {
+        downloadedFutures.emplace_back(std::async(std::launch::async, [baseUrl, continentUrls, filename = filesToDownload[i], &heightmapDownloadInfo, i, &errorOccurred](){
+            bool success = false;
+            for(int cont = 0; cont < continentUrls.size(); cont++) {
+                auto r = cpr::Get(cpr::Url{baseUrl + continentUrls[cont] + filename + ".zip"});
+                if(r.status_code == 200) {
+                    std::ofstream file("heightmaps/" + filename + ".zip");
+                    file << r.text;
+
+                    std::lock_guard<std::mutex> lock(heightmapDownloadInfo.downloadedCountMutex);
+                    heightmapDownloadInfo.downloadedCount++;
+                    SingletonEvent<HeightmapsDownloadProgressEvent, float>::Instance()->Fire(
+                        heightmapDownloadInfo.GetDownloadedPercent()
+                    );
+                    SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Fire(i);
+                    success = true;
+                    break;
+                }
+            }
+            std::mutex m;
+            std::lock_guard<std::mutex> lock(m);
+            if(!success && !errorOccurred) {
+                errorOccurred = true;
+                SingletonEvent<HgtmapDownloadErrorEvent, std::string>::Instance()->Fire(filename);
+            }
+        }));
+    }
 }
 
 int main(int argc, char **argv) {
-    int heightmapsInRow = 1;
-    int planeWidth = 1024;
+    TerrainSettings terrainSettings;
 
-    if(argc < 2) {
-        std::cerr << "Wrong number of command line arguments provided.\n";
-        return 1;
-    }
-    if(argc >= 3)
-        heightmapsInRow = std::stoi(argv[2]);
-    if(argc >= 4)
-        planeWidth = std::stoi(argv[3]);
-    if(argc >= 6) {
-        Window::width = std::stoi(argv[4]);
-        Window::height = std::stoi(argv[5]);
-    }
-    if(argc >= 7)
-        TileGeometry::tileSize = std::stoi(argv[6]);
+    // int heightmapsInRow = 1;
+    // int planeWidth = 1024;
+
+    // if(argc >= 2) {
+    //     // nie ściągaj heightmap, tylko użyj tych z dysku
+    // }
+    // if(argc >= 3)
+    //     heightmapsInRow = std::stoi(argv[2]);
+    // if(argc >= 4)
+    //     planeWidth = std::stoi(argv[3]);
+    // if(argc >= 6) {
+    //     Window::width = std::stoi(argv[4]);
+    //     Window::height = std::stoi(argv[5]);
+    // }
+    // if(argc >= 7)
+    //     TileGeometry::tileSize = std::stoi(argv[6]);
 
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
     ImGui_ImplGlfwGL3_Init(window, false);
 
     Img availableDataImg("img/Continent_def.gif", 3);
-    
-    class Quad : public Drawable {     
-    private:
-        GLuint texId;
-        GLfloat vertices[30] {
-            // vertices  // tex coords
-            -1,  1, 0,   0, 0,
-            -1, -1, 0,   0, 1,
-             1,  1, 0,   1, 0,
-             1,  1, 0,   1, 0,
-            -1, -1, 0,   0, 1,
-             1, -1, 0,   1, 1            
-        };
-        float imgRatio;
-        int imgSizeX, imgSizeY;
+    MapQuad availableDataTexturedQuad(availableDataImg);
 
-        void PreserveImgRatio() {
-            const float screenRatio = (float)Window::width / (float)Window::height;
-            float modX = 0, modY = 0;
-            if(screenRatio > imgRatio) {
-                float yFactor = (float)Window::height / (float)imgSizeY;
-                int shrinkedImgX = imgSizeX * yFactor;
-                int xDiff = Window::width - shrinkedImgX;
-                modX = xDiff / (float)Window::width;
-            } else if(imgRatio > screenRatio) {
-                float xFactor = (float)Window::width / (float)imgSizeX;
-                int shrinkedImgY = imgSizeY * xFactor;
-                int yDiff = Window::height - shrinkedImgY;
-                modY = yDiff / (float)Window::height;
-            }
-            vertices[0] = vertices[5] = vertices[20] = -1 + modX;
-            vertices[10] = vertices[15] = vertices[25] = 1 - modX;
-            vertices[1] = vertices[11] = vertices[16] = 1 - modY;
-            vertices[6] = vertices[21] = vertices[26] = -1 + modY;
-        }
+    std::unique_ptr<LODPlane> lodPlaneUptr = nullptr;
+    std::unique_ptr<HMParser> hmParserUptr = nullptr;
 
-        void ModifyBuffer() {
-            PreserveImgRatio();
-            BindVbo();
-            GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices));
-            UnbindVbo();
-        }
+    SingletonEvent<FramebufferSizeChangedEvent>::Instance()->Register([&mainCamera, &lodPlaneUptr](){
+        if(!lodPlaneUptr) return;
+        mainCamera.projectionMat = glm::perspective(
+            glm::radians(mainCamera.fov), 
+            (float)Window::width / (float)Window::height,
+            mainCamera.near,
+            mainCamera.far
+        );
+        lodPlaneUptr->shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+    });
 
-    public:
-        Quad(Img& img) 
-        : Drawable("shaders/framebufferVertexShader.glsl", "shaders/framebufferFragmentShader.glsl") {
-            imgSizeX = img.GetSizeX();
-            imgSizeY = img.GetSizeY(); 
-            imgRatio = imgSizeX / imgSizeY;
-            PreserveImgRatio();
-            BindVbo();
-            GL_CHECK(glBufferData(
-                GL_ARRAY_BUFFER,
-                sizeof(vertices),
-                &vertices,
-                GL_DYNAMIC_DRAW
-            ));
-            BindVao();
-            GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0)); 
-            GL_CHECK(glEnableVertexAttribArray(0));
-            GL_CHECK(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 
-                                           (GLvoid*)(3 * sizeof(GLfloat)))); 
-            GL_CHECK(glEnableVertexAttribArray(1));
-            UnbindVao();
-            UnbindVbo();
-
-            GL_CHECK(glGenTextures(1, &texId));
-            GL_CHECK(glBindTexture(GL_TEXTURE_2D, texId));
-            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
-            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
-            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-            GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-            GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, img.GetSizeX(), img.GetSizeY(), 0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData()));
-
-            shader.Uniform1i("screenTexture", 4);
-
-            SingletonEvent<FramebufferSizeChangedEvent>::Instance()->Register([this](){
-                this->OnFramebufferSizeChange();
-            });
-        }
-
-        ~Quad() {
-            glDeleteTextures(1, &texId);
-        }
-
-        void Draw() {
-            shader.Use();
-            BindVao();
-            GL_CHECK(glActiveTexture(GL_TEXTURE4));
-            GL_CHECK(glBindTexture(GL_TEXTURE_2D, texId));
-            GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
-            UnbindVao();
-        }
-
-        void OnFramebufferSizeChange() {
-            ModifyBuffer();
-        }
-    };
-
-    Quad availableDataTexturedQuad(availableDataImg);
-
-    std::vector<std::string> heightmaps = GetHeightmapsFilenamesBasedOn(argv[1], heightmapsInRow);    
-    // LODPlane lodPlane(heightmaps, planeWidth);
     TopCamera topCam(1500.0f);
     TopViewFb topViewFb(Window::width, Window::height);
     TopViewScreenQuad topViewScreenQuad(&topViewFb);
 
     // NormalMapQuad nmq(lodPlane.GetNormalMapTex());
 
-    // lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-    // lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-    // lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
-    // lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
-
     std::srand(std::time(0));
-    float lightPos[3]{(float)random(500, 2000), (float)1000, (float)random(500, 2000)};
+    settings.lightPos[0] = (float)random(-1000, 1000);
+    settings.lightPos[1] = (float)1000;
+    settings.lightPos[2] = (float)random(-1000, 1000);
     
-    bool prevMeshMovementLocked = meshMovementLocked;
-    bool prevTerrainVertexSnapping = terrainVertexSnapping;
     double deltaTime = 0;
     double prevFrameTime = glfwGetTime();
     int frames = 0;
     int fps = 0;
     double timePassed = 0;
-    bool show_info_window = true;
-    bool show_settings_window = true;
-    int infoWindowWidth = 0;
-    bool debugColors = false;
-    bool prevDebugColors = debugColors;
-    bool prevDrawTerrainNormals = drawTerrainNormals;
-
-    enum Light_ {Light_PrecalcNormals, Light_LivecalcNormals, Light_None};
-    int lightingType = Light_None;
-    int prevLightingType = lightingType;
 
     HeightmapDownloadInfo heightmapDownloadInfo;
     std::vector<std::future<void>> downloadedFutures;
-    std::vector<std::string> heightmapsZips(heightmapDownloadInfo.size * heightmapDownloadInfo.size);
+    std::vector<std::string> heightmapsFilenames;
+    std::future<void> futureDownload;
 
     UIWindowHeightmapDownloadProgress uiHgtmapDownloadProgress;
-
-    
+    UIWindowHeightmapsReading uiHgtmapsReading;
+    UIWindowInfo uiInfo;
+    UIWindowHeightmapsInfoInput uiHeightmapsInfoInput([&heightmapsFilenames, &heightmapDownloadInfo, &uiHgtmapDownloadProgress, &downloadedFutures, &uiHeightmapsInfoInput, &futureDownload](){
+        futureDownload = std::async(std::launch::async, [&heightmapDownloadInfo, &downloadedFutures, &heightmapsFilenames](){
+            DownloadHeightmaps(heightmapDownloadInfo, downloadedFutures, heightmapsFilenames);
+        });
+        uiHeightmapsInfoInput.ToggleVisibility();
+        uiHgtmapDownloadProgress.ToggleVisibility();
+    }, &heightmapDownloadInfo, &terrainSettings);
+    uiHeightmapsInfoInput.ToggleVisibility();
+    UIWindowRenderingSettings uiRenderSettings(&settings, &(mainCamera.movementSpeed));
+    UIDownloadError uiDownloadError;
 
     int unzippedCount = 0;
     std::mutex unzippedCountMutex;
-    std::vector<std::string> heightmapsFilenames;
     SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Register([&heightmapsFilenames, &unzippedCountMutex, &unzippedCount, &heightmapDownloadInfo](int index){
-        std::cout << "Unzipping " + heightmapsFilenames[index] + ".zip" << std::endl;
         try {
             zipper::Unzipper unzipper("heightmaps/" + heightmapsFilenames[index] + ".zip");
             unzipper.extract("heightmaps");
             std::lock_guard<std::mutex> lock(unzippedCountMutex);
             unzippedCount++;
         } catch(const std::runtime_error &e) {
-            std::cerr << e.what() << std::endl;
+            std::cerr << "Error unzipping " << heightmapsFilenames[index] << ": " << e.what() << std::endl;
         }
-        std::cout << "Unzipped " + heightmapsFilenames[index] + ".zip" << std::endl;        
         if(unzippedCount == heightmapDownloadInfo.GetTotalSize())
             SingletonEvent<HeightmapsUnzippedEvent>::Instance()->Fire();
     });
 
-    bool showCoordinatesInputWindow = true;
+    SingletonEvent<HeightmapsUnzippedEvent>::Instance()->Register([&heightmapsFilenames, &uiHgtmapsReading, &hmParserUptr, &availableDataTexturedQuad, &uiInfo, &uiRenderSettings](){      
+        uiHgtmapsReading.ToggleVisibility();
+        std::vector<std::string> heightmapsPaths(heightmapsFilenames);
+        for(auto& name: heightmapsPaths)
+            name = "heightmaps/" + name;
+        hmParserUptr = std::make_unique<HMParser>(heightmapsPaths);
+        uiHgtmapsReading.ToggleVisibility();
+        availableDataTexturedQuad.ToggleVisibility();
+        uiInfo.ToggleVisibility();
+        uiRenderSettings.ToggleVisibility();
+    });
 
     while(glfwWindowShouldClose(window) == 0) {    
         double time = glfwGetTime();
@@ -419,151 +332,90 @@ int main(int argc, char **argv) {
         timePassed += deltaTime;
         if(timePassed >= 1.0) {
             fps = frames;
+            uiInfo.fps = fps;
             frames = 0;
             timePassed = 0;
         }
         frames++;
         prevFrameTime = time;
 
+        if(hmParserUptr) {
+            mainCamera.SetPosition(glm::vec3(0, hmParserUptr->highestPoint + 5, 0));
+            lodPlaneUptr = std::make_unique<LODPlane>(hmParserUptr, terrainSettings.lodLevels, terrainSettings.tileSize);
+            hmParserUptr.reset(nullptr);
+            lodPlaneUptr->shader.Uniform1i("vertexSnapping", (int)settings.terrainVertexSnapping);
+            lodPlaneUptr->normalsShader.Uniform1i("vertexSnapping", (int)settings.terrainVertexSnapping);
+            lodPlaneUptr->shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+            lodPlaneUptr->normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+            lodPlaneUptr->shader.Uniform1i("lightType", settings.lightingType);
+            lodPlaneUptr->normalsShader.Uniform1i("lightType", settings.lightingType);    
+        }
+
         glfwPollEvents();
         ImGui_ImplGlfwGL3_NewFrame();
 
-        // {
-        //     ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
-        //     ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
-        //     ImGuiWindowFlags infoWindowFlags = 0;
-        //     infoWindowFlags |= ImGuiWindowFlags_NoResize;
-        //     infoWindowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-        //     ImGui::SetNextWindowPos(ImVec2(Window::width - infoWindowWidth - 10, 10), ImGuiSetCond_Always);
-        //     ImGui::Begin("Info", &show_info_window, infoWindowFlags);
-        //     infoWindowWidth = ImGui::GetWindowWidth();
-        //     ImGui::Text("FPS: %d", fps);
-        //     ImGui::Separator();
-        //     ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
-        //     ImGui::End();
-        // }
-        
-        // int settingsWindowWidth = 325;
-        // int settingsWindowHeight = 350;
-        // {
-        //     ImGui::SetNextWindowPos(ImVec2(Window::width - settingsWindowWidth - 10, Window::height - settingsWindowHeight - 10), ImGuiSetCond_FirstUseEver);
-        //     ImGui::SetNextWindowSize(ImVec2(settingsWindowWidth, settingsWindowHeight), ImGuiSetCond_FirstUseEver);
-        //     ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
-        //     ImGuiWindowFlags settingsWindowFlags = 0;
-        //     ImGui::Begin("Settings", &show_settings_window, settingsWindowFlags);
-        //     ImGui::TextWrapped("Press ESC to unlock cursor, then check desired checkboxes and then press ESC again "
-        //                        "to lock cursor and get back camera control.");
-
-        //     ImGui::Separator();
-
-        //     ImGui::Checkbox("Wireframe (R)", &wireframeMode);
-        //     ImGui::Checkbox("Lock terrain mesh in place (L)", &meshMovementLocked);   
-        //     ImGui::Checkbox("Draw terrain normals (N)", &drawTerrainNormals);
-        //     ImGui::Checkbox("Draw top view (T)", &drawTopView);
-        //     ImGui::Checkbox("Terrain vertex snapping (V)", &terrainVertexSnapping);
-        //     ImGui::Checkbox("Color mesh levels", &debugColors);
-
-        //     ImGui::Separator();
-
-        //     ImGui::Text("Lighting");
-        //     ImGui::DragFloat3("Light position", lightPos);     
-        //     ImGui::RadioButton("Precalculated normals", &lightingType, Light_PrecalcNormals);
-        //     ImGui::RadioButton("Live calculated normals", &lightingType, Light_LivecalcNormals);
-        //     ImGui::RadioButton("No normals (no light)", &lightingType, Light_None);
-
-        //     ImGui::Separator();
-
-        //     ImGui::DragFloat("Movement speed", &mainCamera.movementSpeed);
-
-        //     ImGui::End();
-        // }
-
-        if(debugColors != prevDebugColors) {
-            // lodPlane.shader.Uniform1i("debug", (int)debugColors);
-        }
-        prevDebugColors = debugColors;
-
-        if(lightingType == Light_PrecalcNormals && lightingType != prevLightingType) {
-            terrainVertexSnapping = true;
-        } else if(lightingType == Light_LivecalcNormals && lightingType != prevLightingType) {
-            terrainVertexSnapping = true;
-        } else if(lightingType != prevLightingType) {
-            terrainVertexSnapping = true;
-        } 
-        prevLightingType = lightingType;
-
-        // lodPlane.shader.Uniform1i("lightType", lightingType);
-        // lodPlane.normalsShader.Uniform1i("lightType", lightingType);
-
-        if(terrainVertexSnapping != prevTerrainVertexSnapping) {
-            // lodPlane.shader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-            // lodPlane.normalsShader.Uniform1i("vertexSnapping", (int)terrainVertexSnapping);
-        }
-        prevTerrainVertexSnapping = terrainVertexSnapping;
-
-        mainCamera.Move(keys, deltaTime);
         GL_CHECK(glClearColor(0.0, 0.0, 0.0, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK(glEnable(GL_DEPTH_TEST));
 
-        if(prevMeshMovementLocked != meshMovementLocked)
-            // lodPlane.ToggleMeshMovementLock(mainCamera);  
-        prevMeshMovementLocked = meshMovementLocked;
+        if(lodPlaneUptr) {
+            mainCamera.Move(keys, deltaTime);
 
-        if(wireframeMode)
-            GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+            if(settings.lightingType != settings.prevLightingType) {
+                lodPlaneUptr->shader.Uniform1i("lightType", settings.lightingType);
+                lodPlaneUptr->normalsShader.Uniform1i("lightType", settings.lightingType);    
+                settings.prevLightingType = settings.lightingType;
+            }
+            lodPlaneUptr->shader.Uniform3f("lightPosition", settings.lightPos[0], settings.lightPos[1], settings.lightPos[2]);       
+            if(settings.drawTerrainNormals != settings.prevDrawTerrainNormals) {
+                lodPlaneUptr->ToggleDebugNormals();
+                settings.prevDrawTerrainNormals = settings.drawTerrainNormals;
+            }
+            if(settings.prevMeshMovementLocked != settings.meshMovementLocked) {
+                lodPlaneUptr->ToggleMeshMovementLock(mainCamera);
+                settings.prevMeshMovementLocked = settings.meshMovementLocked;
+            }  
 
-        // lodPlane.DrawFrom(mainCamera);
+            if(settings.debugColors != settings.prevDebugColors) {
+                lodPlaneUptr->shader.Uniform1i("debug", (int)settings.debugColors);
+                settings.prevDebugColors = settings.debugColors;
+            }
 
-        if(drawTerrainNormals != prevDrawTerrainNormals)
-            // lodPlane.ToggleDebugNormals();
-        prevDrawTerrainNormals = drawTerrainNormals;
+            if(settings.lightingType != settings.prevLightingType) {
+                settings.terrainVertexSnapping = true;
+                settings.prevLightingType = settings.lightingType;
+            } 
 
-        if(wireframeMode)
-            GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+            if(settings.terrainVertexSnapping != settings.prevTerrainVertexSnapping) {
+                lodPlaneUptr->shader.Uniform1i("vertexSnapping", (int)settings.terrainVertexSnapping);
+                lodPlaneUptr->normalsShader.Uniform1i("vertexSnapping", (int)settings.terrainVertexSnapping);
+                settings.prevTerrainVertexSnapping = settings.terrainVertexSnapping;
+            }
 
-        if(drawTopView)
-            // topViewFb.Draw(lodPlane, &topCam, &mainCamera);
-
-        // lodPlane.shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
-        // lodPlane.normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
-
-        if(drawTopView)
-            topViewScreenQuad.Draw();
+            if(settings.wireframeMode) GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+            lodPlaneUptr->DrawFrom(mainCamera);
+            if(settings.wireframeMode) GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        
+            if(settings.drawTopView) {
+                topViewFb.Draw(*lodPlaneUptr, &topCam, &mainCamera);
+                topViewScreenQuad.Draw();
+                lodPlaneUptr->shader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+                lodPlaneUptr->normalsShader.UniformMatrix4fv("projMat", mainCamera.projectionMat);
+            }
+        }
 
         // nmq.Draw();
 
         availableDataTexturedQuad.Draw();
-
-        if(showCoordinatesInputWindow) {
-            ImGui::Begin("Where do you want to go?");
-            ImGui::TextWrapped(
-                "The image beneath this window shows what data is available to display. "
-                "Please provide latitude and longitude of the colored square that you want to explore. "
-                "You can move this window around if you want to. "
-            );
-            ImGui::Separator();
-            ImGui::DragInt("Latitude", &heightmapDownloadInfo.lat, .25, -170, 170);
-            ImGui::DragInt("Longitude", &heightmapDownloadInfo.lon, .25, -60, 60);
-            ImGui::Separator();
-            ImGui::TextWrapped(
-                "The size of 2 means, that the application will display a bigger square of data consisting of 2 by 2 little "
-                "squares extending to the right and the bottom of the one chosen above."
-            );
-            ImGui::InputInt("Size", &heightmapDownloadInfo.size);
-            if(ImGui::Button(" OK ")) {
-                heightmapsFilenames = DownloadHeightmaps(heightmapDownloadInfo, downloadedFutures);
-                showCoordinatesInputWindow = false;
-                uiHgtmapDownloadProgress.ToggleVisibility();
-            }
-            ImGui::End();
-        }
-
-
+        
+        uiHeightmapsInfoInput.Draw();
         uiHgtmapDownloadProgress.Draw();
+        uiHgtmapsReading.Draw();
+        uiInfo.Draw();        
+        uiRenderSettings.Draw();
+        uiDownloadError.Draw();
 
         ImGui::Render();
-        // lodPlane.shader.Uniform3f("lightPosition", lightPos[0], lightPos[1], lightPos[2]);        
         glfwSwapBuffers(window);
     }
 

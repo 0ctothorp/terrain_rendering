@@ -20,6 +20,7 @@ HMParser::HMParser(const std::vector<std::string>& heightmaps)
     for(int i = 0; i < totalWidth; i++) {
         for(int j = 0; j < totalWidth; j++) {
             heights.push_back(GetHeight(data[i * totalWidth + j]));
+            if(heights[heights.size() - 1] > highestPoint) highestPoint = heights[heights.size() - 1];
         }
     }
     CalculateNormals();

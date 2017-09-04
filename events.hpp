@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 
 
 template <class Event, typename ...Args>
@@ -36,3 +37,5 @@ class HeightmapsUnzippedEvent {};
 class HeightmapsDownloadProgressEvent {};
 class HeightmapDownloadedEvent {};
 class FramebufferSizeChangedEvent {};
+class HgtmapDownloadErrorEvent {};
+class ReturnFromDownloadErrorEvent {};
