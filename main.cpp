@@ -299,18 +299,19 @@ int main(int argc, char **argv) {
     UIWindowRenderingSettings uiRenderSettings(&settings, &(mainCamera.movementSpeed));
     UIDownloadError uiDownloadError;
 
-    int unzippedCount = 0;
+    // int unzippedCount = 0;
     std::mutex unzippedCountMutex;
-    SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Register([&heightmapsFilenames, &unzippedCountMutex, &unzippedCount, &heightmapDownloadInfo](int index){
+    SingletonEvent<HeightmapDownloadedEvent, int>::Instance()->Register([&heightmapsFilenames, &unzippedCountMutex, &heightmapDownloadInfo](int index){
         try {
             zipper::Unzipper unzipper("heightmaps/" + heightmapsFilenames[index] + ".zip");
             unzipper.extract("heightmaps");
             std::lock_guard<std::mutex> lock(unzippedCountMutex);
-            unzippedCount++;
+            heightmapDownloadInfo.unzippedCount++;
         } catch(const std::runtime_error &e) {
             std::cerr << "Error unzipping " << heightmapsFilenames[index] << ": " << e.what() << std::endl;
         }
-        if(unzippedCount == heightmapDownloadInfo.GetTotalSize())
+        std::lock_guard<std::mutex> lock(unzippedCountMutex);        
+        if(heightmapDownloadInfo.unzippedCount == heightmapDownloadInfo.GetTotalSize())
             SingletonEvent<HeightmapsUnzippedEvent>::Instance()->Fire();
     });
 
@@ -324,6 +325,13 @@ int main(int argc, char **argv) {
         availableDataTexturedQuad.ToggleVisibility();
         uiInfo.ToggleVisibility();
         uiRenderSettings.ToggleVisibility();
+    });
+
+    SingletonEvent<ReturnFromDownloadErrorEvent>::Instance()->Register([&downloadedFutures, &heightmapsFilenames, &heightmapDownloadInfo](){
+        downloadedFutures.clear();
+        heightmapsFilenames.clear();
+        heightmapDownloadInfo.downloadedCount = 0;
+        heightmapDownloadInfo.unzippedCount = 0;
     });
 
     while(glfwWindowShouldClose(window) == 0) {    

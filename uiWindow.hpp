@@ -45,6 +45,7 @@ public:
         });
         SingletonEvent<HgtmapDownloadErrorEvent, std::string>::Instance()->Register([this](auto s){
             this->ToggleVisibility();
+            progress = 0;
         });
     }
 };

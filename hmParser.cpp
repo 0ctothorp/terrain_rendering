@@ -99,8 +99,9 @@ void HMParser::EliminateDataVoids() {
                         }
                     }
                 }
-
-                data[index] = sum / count;
+                if(count > 0)
+                    data[index] = sum / count;
+                else data[index] = 0;
             }
         }
     }
