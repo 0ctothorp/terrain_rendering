@@ -12,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <cpr/cpr.h>
 #include <zipper/unzipper.h>
+#include <boost/filesystem.hpp>
 
 #include "libs/imgui/imgui.h"
 #include "libs/imgui/imgui_impl_glfw_gl3.h"
@@ -38,6 +39,7 @@
 #include "mapQuad.hpp"
 
 
+namespace fs = boost::filesystem;
 std::string baseUrl = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/";
 std::array<std::string, 6> continentUrls { "Eurasia/", "Africa/", "Australia/", "Islands/", "North_America/", "South_America/" };
 
@@ -181,8 +183,7 @@ GLFWwindow* GetGLFWwindow(const char *name){
 void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vector<std::future<void>>& downloadedFutures, std::vector<std::string>& heightmapsFilenames) {
     int lat = heightmapDownloadInfo.lat,
         lon = heightmapDownloadInfo.lon;
-    std::string filename = GetHeightmapFileNameWithPossibleNegativeLatLon(lat, lon);
-    heightmapsFilenames = GetHeightmapsFilenamesBasedOn(filename.c_str(), heightmapDownloadInfo.size);
+    heightmapsFilenames = GetHeightmapsFilenamesBasedOn(lat, lon, heightmapDownloadInfo.size);
     std::vector<std::string> filesToDownload = GetFilesToDownloadFrom(heightmapsFilenames);
 
     if(filesToDownload.size() == 0) {
@@ -192,6 +193,12 @@ void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vecto
         return;
     }
 
+    fs::path cp = fs::current_path();
+    fs::path p = cp / "heightmaps";
+    if(!fs::exists(p)) {
+        fs::create_directory(p);
+    }
+
     bool errorOccurred = false;
     for(int i = 0; i < filesToDownload.size(); i++) {
         downloadedFutures.emplace_back(std::async(std::launch::async, [baseUrl, continentUrls, filename = filesToDownload[i], &heightmapDownloadInfo, i, &errorOccurred](){
@@ -199,6 +206,8 @@ void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vecto
             for(int cont = 0; cont < continentUrls.size(); cont++) {
                 auto r = cpr::Get(cpr::Url{baseUrl + continentUrls[cont] + filename + ".zip"});
                 if(r.status_code == 200) {
+                    
+
                     std::ofstream file("heightmaps/" + filename + ".zip");
                     file << r.text;
 
@@ -224,23 +233,6 @@ void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vecto
 
 int main(int argc, char **argv) {
     TerrainSettings terrainSettings;
-
-    // int heightmapsInRow = 1;
-    // int planeWidth = 1024;
-
-    // if(argc >= 2) {
-    //     // nie ściągaj heightmap, tylko użyj tych z dysku
-    // }
-    // if(argc >= 3)
-    //     heightmapsInRow = std::stoi(argv[2]);
-    // if(argc >= 4)
-    //     planeWidth = std::stoi(argv[3]);
-    // if(argc >= 6) {
-    //     Window::width = std::stoi(argv[4]);
-    //     Window::height = std::stoi(argv[5]);
-    // }
-    // if(argc >= 7)
-    //     TileGeometry::tileSize = std::stoi(argv[6]);
 
     auto window = GetGLFWwindow("OpenGL terrain rendering");
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);

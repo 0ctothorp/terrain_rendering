@@ -2,7 +2,7 @@ VERBOSE = 1
 
 CXX = g++
 
-LDFLAGS = -lpthread -lcurl -lz
+LDFLAGS = -lpthread -lcurl -lz -lboost_system -lboost_filesystem
 WINDOWS = false
 
 ifeq ($(WINDOWS), true)
