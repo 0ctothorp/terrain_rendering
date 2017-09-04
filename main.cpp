@@ -196,7 +196,9 @@ void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vecto
     fs::path cp = fs::current_path();
     fs::path p = cp / "heightmaps";
     if(!fs::exists(p)) {
-        fs::create_directory(p);
+        if(!fs::create_directory(p)) {
+            std::cerr << "Couldn't create 'heightmaps' directory." << std::endl;
+        }
     }
 
     bool errorOccurred = false;
