@@ -147,8 +147,8 @@ private:
     float *mainCamMoveSpeed;
 
     void Render() override {
-        ImGui::SetNextWindowPos(ImVec2(Window::width - width - 10, Window::height - height - 10), ImGuiSetCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiSetCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(Window::width - width - 10, Window::height - height - 10), ImGuiSetCond_Appearing);
+        ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiSetCond_Appearing);
         ImGui::SetNextWindowCollapsed(false, ImGuiSetCond_FirstUseEver);
         ImGuiWindowFlags settingsWindowFlags = 0;
         ImGui::Begin("Settings", &show, settingsWindowFlags);
