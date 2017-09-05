@@ -1,6 +1,4 @@
 #include <cmath>
-//tmp
-#include <iostream>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -9,28 +7,6 @@
 #include "glDebug.hpp"
 #include "edgeMorph.hpp"
 
-
-LODPlane::LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth) 
-: planeWidth(planeWidth)
-, shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
-, normalsShader("shaders/planeVertexShader.glsl", "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl") {
-    CalcLayersNumber();
-    CreateTiles();
-    SetUniforms();
-    SetHeightmap(heightmapsPaths);
-    SetColorsTexture();
-}
-
-// LODPlane::LODPlane(std::unique_ptr<HMParser> const &hmParserUptr, int planeWidth)
-// : planeWidth(planeWidth)
-// , shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
-// , normalsShader("shaders/planeVertexShader.glsl", "shaders/normalsFragment.glsl", "shaders/normalsGeom.glsl") {
-//     CalcLayersNumber();
-//     CreateTiles();
-//     SetUniforms();
-//     SetHeightmap(hmParserUptr);
-//     SetColorsTexture();
-// }
 
 LODPlane::LODPlane(const std::unique_ptr<HMParser> &hmParserUptr, int lodLevels, int tileSize)
 : shader("shaders/planeVertexShader.glsl", "shaders/planeFragmentShader.glsl")
@@ -44,6 +20,7 @@ LODPlane::LODPlane(const std::unique_ptr<HMParser> &hmParserUptr, int lodLevels,
     SetUniforms();
     SetHeightmap(hmParserUptr);
     SetColorsTexture();
+    shader.Uniform1i("highestPoint", hmParserUptr->highestPoint);
 }
 
 LODPlane::~LODPlane() {

@@ -25,14 +25,14 @@ ifeq ($(WINDOWS), true)
 	EXE := $(EXE).exe
 endif
 
-DEBUG = on
+DEBUG = off
 
 
 ifeq ($(DEBUG), on)
 	CXXFLAGS += -g -DDEBUG
 else
-	CXXFLAGS += -O3
-	LDFLAGS += -O3
+	CXXFLAGS += -O2
+	LDFLAGS += -O2
 endif
 
 default: $(EXE)

@@ -61,11 +61,6 @@ public:
     // Shader dla wektorów normalnych terenu.
     const Shader normalsShader;
     
-    /* Konstruktor. Przyjmuje jako pierwszy argument kolekcję ścieżek do map wysokości, z których
-       utworzona ma być jedna heightmapa. Drugi argument to żądana szerokość siatki terenu. Siatka
-       jest kwadratem. */
-    LODPlane(const std::vector<std::string>& heightmapsPaths, int planeWidth);
-    // LODPlane(std::unique_ptr<HMParser> const &hmParserUptr, int planeWidth = 1024);
     LODPlane(const std::unique_ptr<HMParser> &hmParserUptr, int lodLevels, int tileSize);
     /* Destruktor. Usuwa obiekty OpenGL utworzone w konstruktorze takie, jak 'heightmapTex',
        'normalMapTex' oraz 'terrainColorsTex'. */
