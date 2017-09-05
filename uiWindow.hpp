@@ -80,7 +80,7 @@ private:
         width = ImGui::GetWindowWidth();
         ImGui::Text("FPS: %d", fps);
         ImGui::Separator();
-        ImGui::Text("ESC to unlock mouse cursor.\nESC again to lock cursor.");      
+        ImGui::Text("ESC to lock mouse cursor and get\ncontrol of camera.\nESC again to unlock cursor and get\nit back.");      
         ImGui::End();
     }
 
