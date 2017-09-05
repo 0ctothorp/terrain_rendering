@@ -363,6 +363,10 @@ int main(int argc, char **argv) {
 
         if(hmParserUptr) {
             mainCamera.SetPosition(glm::vec3(0, hmParserUptr->highestPoint + 5, 0));
+            mainCamera.lat = heightmapDownloadInfo.lat - (float)heightmapDownloadInfo.size / 2 + 1;
+            mainCamera.lon = heightmapDownloadInfo.lon + (float)heightmapDownloadInfo.size / 2;
+            uiInfo.lat = mainCamera.lat;
+            uiInfo.lon = mainCamera.lon;
             lodPlaneUptr = std::make_unique<LODPlane>(hmParserUptr, terrainSettings.lodLevels, terrainSettings.tileSize);
             hmParserUptr.reset(nullptr);
             lodPlaneUptr->shader.Uniform1i("vertexSnapping", (int)settings.terrainVertexSnapping);
@@ -382,6 +386,8 @@ int main(int argc, char **argv) {
 
         if(lodPlaneUptr) {
             mainCamera.Move(keys, deltaTime);
+            uiInfo.lat = mainCamera.lat;
+            uiInfo.lon = mainCamera.lon;
 
             if(settings.lightingType != settings.prevLightingType) {
                 lodPlaneUptr->shader.Uniform1i("lightType", settings.lightingType);

@@ -23,6 +23,7 @@ private:
     glm::vec3 position2;
     // Informuje, czy podążanie terenu za kamerą jest włączone.
     bool meshMovementLocked = false;
+    glm::vec3 prevPosition;
 
     // Aktualizuje wektory 'front', 'right' i 'up' po każdej zmianie kątów 'pitch' i 'yaw'.
     void updateCameraVectors();
@@ -42,6 +43,7 @@ public:
     );
     // Prędkość poruszania się kamery nad terenem.
     float movementSpeed = 100.0f;    
+    float lat, lon;
 
     // 'position' - startowa pozycja kamery.
     MainCamera(glm::vec3 position = glm::vec3(0, 20, 0));

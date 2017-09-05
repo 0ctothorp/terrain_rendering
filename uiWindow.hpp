@@ -80,12 +80,16 @@ private:
         width = ImGui::GetWindowWidth();
         ImGui::Text("FPS: %d", fps);
         ImGui::Separator();
-        ImGui::Text("ESC to lock mouse cursor and get\ncontrol of camera.\nESC again to unlock cursor and get\nit back.");      
+        ImGui::Text("ESC to lock mouse cursor and get\ncontrol of camera.\nESC again to unlock cursor and get\nit back.");   
+        ImGui::Separator();
+        ImGui::Text("Latitude: %f", lat);
+        ImGui::Text("Longitude %f", lon);   
         ImGui::End();
     }
 
 public:
     int fps = 0;
+    float lat, lon;
 };
 
 

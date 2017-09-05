@@ -7,7 +7,8 @@
 MainCamera::MainCamera(glm::vec3 position)
 : Camera(position)
 , frustum(this, &projectionMat) 
-, position2(position) {
+, position2(position) 
+, prevPosition(position){
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     front = glm::vec3(0.0f, 0.0f, -1.0f);
     right = glm::normalize(glm::cross(front, worldUp));
@@ -51,6 +52,11 @@ void MainCamera::Move(bool *keys, double deltaTime) {
         if(keys[GLFW_KEY_SPACE]) position2 += worldUp * velocity;
         if(keys[GLFW_KEY_LEFT_CONTROL]) position2 -= worldUp * velocity;
     }
+    if(position != prevPosition) {
+        lat = lat - ((position.z - prevPosition.z) / 1200.0f);
+        lon = lon + ((position.x - prevPosition.x) / 1200.0f);
+    }
+    prevPosition = position;
 }
 
 void MainCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, float sensitivity) {
