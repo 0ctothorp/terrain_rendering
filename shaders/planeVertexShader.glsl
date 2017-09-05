@@ -167,7 +167,7 @@ void main() {
     heightmapSize = textureSize(heightmap, 0).x;
     uv = (position.xz + vec2(meshSize / 2.0f, meshSize / 2.0f) + (heightmapSize - meshSize) 
         / 2.0f) / heightmapSize;
-    position.y = texture(heightmap, uv).r / 55.0f;
+    position.y = texture(heightmap, uv).r / 92.5f;
 
     if(lightType == LIGHT_LIVECALC_NORMALS) {
         float right = getNeighbourVertexPosition(DIR_RIGHT).y;

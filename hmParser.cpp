@@ -112,7 +112,7 @@ std::vector<short>* HMParser::GetDataPtr() {
 }
 
 float HMParser::GetHeight(short h) {
-    return (float)h / 50.0f;
+    return (float)h / 92.5f;
 }
 
 glm::vec3 HMParser::GetPointTo(glm::vec3 point, PointTo_ pointTo) {

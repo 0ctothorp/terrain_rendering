@@ -37,7 +37,7 @@ void main() {
         else color = yellow;
         if(morphFactor > 0) color = mix(color, vec4(1, 1, 1, 1), morphFactor);
     } else {
-        color = texture(terrainColors, fragPos.y / 70.0f);    
+        color = texture(terrainColors, fragPos.y / 43.24);    
     }
     
     if(lightType != LIGHT_NONE) {

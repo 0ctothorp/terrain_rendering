@@ -7,7 +7,7 @@ Program do wizualizacji terenu, ściągający i rozpakowujący dane wysokości z
 Do kompilacji potrzebnych będzie zainstalowanych kilka bibliotek: GLEW, GLFW3, GLM, Boost Filesystem, Boost System, curl oraz zlib. Na systemie Ubuntu wystarczy wywołać poniższą komendę, by zainstalować wymienione oprogramowanie:
 ```
 sudo apt-get install libglew-dev libglfw3-dev libglm-dev \ 
-libcurl3 zlib1g-dev lboost-system lboost-filesystem
+libcurl3 zlib1g-dev lboost-system-dev lboost-filesystem-dev
 ```
 Poza nimi potrzebne będą również programy GNU Make oraz git. Po zainstalowaniu wymaganego oprogramowania wystarczy uruchomić dwa polecenia:
 ```
