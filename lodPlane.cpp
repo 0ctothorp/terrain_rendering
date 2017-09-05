@@ -2,6 +2,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "img.hpp"
+
 #include "lodPlane.hpp"
 #include "tileGeometry.hpp"
 #include "glDebug.hpp"
@@ -147,20 +149,21 @@ void LODPlane::SetHeightmap(const std::unique_ptr<HMParser> &hmParserUptr) {
 }
 
 void LODPlane::SetColorsTexture() {
-    int colors = 11;
-    unsigned char terrainColors[colors * 3] {
-        50, 120, 150,
-        79, 198, 79,
-        59, 225, 59,
-        150, 255, 0,
-        210, 255, 0,
-        255, 246, 0,
-        255, 198, 0,
-        255, 174, 0,
-        255, 144, 0,
-        255, 114, 0,
-        255, 60, 0
-    };
+    Img img("img/terraincolors.png", 3);
+    // int colors = 11;
+    // unsigned char terrainColors[colors * 3] {
+    //     50, 120, 150,
+    //     79, 198, 79,
+    //     59, 225, 59,
+    //     150, 255, 0,
+    //     210, 255, 0,
+    //     255, 246, 0,
+    //     255, 198, 0,
+    //     255, 174, 0,
+    //     255, 144, 0,
+    //     255, 114, 0,
+    //     255, 60, 0
+    // };
     shader.Uniform1i("terrainColors", 3);
     GL_CHECK(glGenTextures(1, &terrainColorsTex));
     GL_CHECK(glBindTexture(GL_TEXTURE_1D, terrainColorsTex));
@@ -169,8 +172,8 @@ void LODPlane::SetColorsTexture() {
     GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GL_CHECK(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    GL_CHECK(glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, colors, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-                          terrainColors));
+    GL_CHECK(glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, img.GetSizeX(), 0, GL_RGB, GL_UNSIGNED_BYTE, 
+                          img.GetData()));
 }
 
 void LODPlane::DrawFrom(const MainCamera &camera, const Camera* additionalCam) const {

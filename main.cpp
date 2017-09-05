@@ -21,6 +21,7 @@
 #include "topCamera.hpp"
 #include "glDebug.hpp"
 #include "mouse.hpp"
+#define STB_IMAGE_IMPLEMENTATION
 #include "lodPlane.hpp"
 #include "window.hpp"
 #include "topViewFb.hpp"
@@ -37,7 +38,6 @@
 #include "utils.hpp"
 #include "terrainSettings.hpp"
 #include "mapQuad.hpp"
-
 
 namespace fs = boost::filesystem;
 std::string baseUrl = "https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/";

@@ -2,8 +2,6 @@
 
 #include <string>
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_GIF
 #include "libs/stb/stb_image.h"
 
 
