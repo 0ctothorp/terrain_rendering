@@ -242,6 +242,18 @@ void DownloadHeightmaps(HeightmapDownloadInfo& heightmapDownloadInfo, std::vecto
 }
 
 int main(int argc, char **argv) {
+    if(argc == 3) {
+        try {
+            Window::width = std::stoi(argv[1]);
+            Window::height = std::stoi(argv[2]);
+        } catch(const std::exception &e) {
+            std::cerr << e.what() << ": wrong arguments!" << std::endl;
+            std::cerr << "Usage: ./main width height" << std::endl;
+            Window::width = 1024;
+            Window::height = 768;
+        }
+    }
+
     TerrainSettings terrainSettings;
 
     auto window = GetGLFWwindow("OpenGL terrain rendering");
