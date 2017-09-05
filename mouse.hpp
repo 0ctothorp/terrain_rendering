@@ -25,7 +25,7 @@ public:
     Mouse(double _x, double _y, MainCamera* mainCam);
     /* Reakcja na ruch myszy - ustawia 'lastX' oraz 'lastY' i informuje 
        główną kamerę 'mainCam' o ruchu. */
-    void MoveCallback(double xpos, double ypos);
+    void MoveCallback(double xpos, double ypos, bool just_unlocked = false);
     // Reakcja na użycie "scrolla" - informuje 'mainCam' o zdarzeniu.
     void ScrollCallback(double yoffset);
 };

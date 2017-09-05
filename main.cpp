@@ -45,6 +45,7 @@ std::array<std::string, 6> continentUrls { "Eurasia/", "Africa/", "Australia/", 
 
 bool keys[GLFW_KEY_LAST]{false};
 bool cursor = true;
+bool prevCursor = cursor;
 
 TerrainRenderingSettings settings;
 MainCamera mainCamera;
@@ -57,6 +58,7 @@ void KeyCallback(GLFWwindow* window, int key, int, int action, int) {
     }
 
     if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
+        prevCursor = cursor;
         cursor = !cursor;   
         glfwSetInputMode(window, GLFW_CURSOR, cursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
         return;
@@ -92,7 +94,13 @@ void GlfwErrorCallback(int error, const char* description) {
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    if(!cursor) mouse.MoveCallback(xpos, ypos);
+    if(!cursor) {
+        if(cursor != prevCursor) {
+            mouse.MoveCallback(xpos, ypos, true);
+            prevCursor = cursor;
+        } else
+            mouse.MoveCallback(xpos, ypos);
+    }
 }
 
 void MouseScrollCallback(GLFWwindow* window, double, double yoffset) {

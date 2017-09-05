@@ -10,8 +10,8 @@ Mouse::Mouse(double _x, double _y, MainCamera* mainCamera)
 , lastY(_y)
 , mainCam(mainCamera) {}
 
-void Mouse::MoveCallback(double xpos, double ypos) {
-    if(firstTime) {
+void Mouse::MoveCallback(double xpos, double ypos, bool just_unlocked) {
+    if(firstTime || just_unlocked) {
         lastX = xpos;
         lastY = ypos;    
         firstTime = false;
