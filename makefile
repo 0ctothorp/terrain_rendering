@@ -11,7 +11,7 @@ else
 	LDFLAGS += -lGL -lGLEW -lglfw
 endif
 
-CXXFLAGS = -std=c++14 -Wall -I ./libs/cpr/include -I ./libs/zipper/build/zipper
+CXXFLAGS = -std=c++14 -Wall -I ./libs/cpr/include -I ./libs/zipper
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
