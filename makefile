@@ -41,7 +41,7 @@ build-submodules:
 	git submodule update --init --recursive
 	cd libs/zipper; mkdir -p build; cd build; cmake ..; make; \
 	cd ..; cd ..; \
-	cd cpr; mkdir -p build; cd build; cmake ..; make;
+	cd cpr; mkdir -p build; cd build; cmake .. -DUSE_SYSTEM_CURL=ON -DBUILD_CPR_TESTS=OFF -DGENERATE_COVERAGE=OFF; make;
 
 $(EXE): $(OBJECTS) $(IMGUIOBJ) ./libs/cpr/build/lib/libcpr.a ./libs/zipper/build/libZipper-static.a
 	$(CXX) $^ -o $@ $(LDFLAGS)
