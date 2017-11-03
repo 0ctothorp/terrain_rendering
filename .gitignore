@@ -7,3 +7,4 @@ imgui.ini
 maketry.sh
 .vscode
 build
+*.swp

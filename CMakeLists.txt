@@ -35,7 +35,7 @@ set(
 ) 
 
 function(get_sources output_var)
-    set(tmpList "")
+    set(tmpList)
     foreach(module IN LISTS MODULES)
         list(APPEND tmpList ${module}.cpp)
     endforeach(module)
@@ -45,8 +45,19 @@ endfunction(get_sources)
 get_sources(SOURCES)
 
 # a może zrobić w libs CMakeLists.txt i załączać tylko libs? chyba lepiej.
-add_subdirectory(libs/cpr)
-add_subdirectory(libs/zipper)
+add_subdirectory(libs)
+include_directories(${CPR_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zipper)
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
-#[[ add_executable(TerrainRenderer main.cpp ${SOURCES}) 
-target_link_libraries(TerrainRenderer lpthread lcurl lz lboost_system lboost_filesystem lGL lGLEW lglfw) ]]
+add_executable(TerrainRenderer main.cpp ${SOURCES}) 
+target_link_libraries(
+    TerrainRenderer 
+    ${CPR_LIBRARIES}
+    ${ZIPPER-LIBRARY}-static
+    pthread curl z 
+    GL GLEW glfw
+)
