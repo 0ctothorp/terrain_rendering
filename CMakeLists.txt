@@ -14,6 +14,7 @@ endfunction(add_objs)
 
 set(
     MODULES
+    main
     camera
     drawable
     framebuffer
@@ -43,21 +44,35 @@ function(get_sources output_var)
 endfunction(get_sources)
 
 get_sources(SOURCES)
+add_executable(TerrainRenderer ${SOURCES}) 
 
-# a może zrobić w libs CMakeLists.txt i załączać tylko libs? chyba lepiej.
 add_subdirectory(libs)
-include_directories(${CPR_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zipper)
+
+include_directories(${IMGUI_INCLUDE_DIR})
+include_directories(${ZIPPER_INCLUDE_DIR})
+include_directories(${CPR_INCLUDE_DIR})
+
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
-find_package(glfw3 REQUIRED)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
 
-add_executable(TerrainRenderer main.cpp ${SOURCES}) 
+find_package(glfw3 REQUIRED)
+include_directories(${GLFW_INCLUDE_DIR})
+find_package(Boost COMPONENTS system filesystem REQUIRED)
+include_directories(${BOOST_INCLUDE_DIR})
+
 target_link_libraries(
     TerrainRenderer 
+    curl 
+    pthread 
+    z
+    ${OPENGL_gl_LIBRARY}
+    ${GLEW_LIBRARIES} 
+    ${GLFW3_LIBRARY}
     ${CPR_LIBRARIES}
-    ${ZIPPER-LIBRARY}-static
-    pthread curl z 
-    GL GLEW glfw
+    imgui
+    Zipper-static
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_FILESYSTEM_LIBRARY}
 )
+

@@ -1,3 +1,16 @@
 add_subdirectory(cpr)
 add_subdirectory(zipper)
 add_subdirectory(imgui)
+
+macro(PUSH_VAR_SCOPE_UP var)
+    set(${var} ${${var}} PARENT_SCOPE)
+endmacro(PUSH_VAR_SCOPE_UP)
+
+PUSH_VAR_SCOPE_UP(CPR_LIBRARIES)
+PUSH_VAR_SCOPE_UP(CPR_INCLUDE_DIR)
+PUSH_VAR_SCOPE_UP(IMGUI_LIBRARY)
+PUSH_VAR_SCOPE_UP(IMGUI_INCLUDE_DIR)
+
+set(ZIPPER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zipper PARENT_SCOPE)
+set(ZIPPER_LIBRARY Zipper-static PARENT_SCOPE)
+
